@@ -113,12 +113,16 @@ test("log, edit, repeat, photo, backup, reload and last-ascent deletion", async 
   await expect(page.locator(".journal-photo")).toBeVisible();
 });
 
-test("unknown approaches can be added and blank dates stay optional", async ({ page }) => {
-  await page.getByLabel("Filter passes by name").fill("Tiefenbach");
+test("Klausenpass has preloaded approaches and can be logged without route entry", async ({ page }) => {
+  await page.getByLabel("Filter passes by name").fill("Klausenpass");
   await page.locator(".pass-card").click();
-  await expect(page.getByText("Approaches for this pass have not been verified yet.", { exact: false })).toBeVisible();
-  await page.getByLabel("Starting place or approach name").fill("From Sölden");
-  await page.getByRole("button", { name: "Add approach", exact: true }).click();
+  await expect(page.getByRole("button", { name: "Add approach", exact: true })).toHaveCount(0);
+  await expect(page.locator("#approach-form")).toHaveCount(0);
+  await expect(page.getByRole("heading", { name: "From Altdorf (Tell monument)" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "From Linthal station" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "From Schattdorf" })).toBeVisible();
+  await page.getByRole("button", { name: "Log ascent", exact: true }).first().click();
+  await expect(page.locator('select[name="approachId"] option')).toHaveCount(3);
   await page.getByRole("button", { name: "Save ascent", exact: true }).click();
   await expect(page.getByText("Date not recorded", { exact: true })).toBeVisible();
   await expect(page.locator(".status-pill")).toHaveText("✓ Collected");

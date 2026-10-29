@@ -127,7 +127,7 @@ function confirmChange(message, acceptLabel) {
 }
 async function allowLeave() {
   if (saving) { notice("Please wait for the current save to finish."); return false; }
-  return !draft || await confirmChange("Discard the unfinished ascent or approach? Your saved records will not change.", "Discard draft");
+  return !draft || await confirmChange("Discard the unfinished ascent? Your saved records will not change.", "Discard draft");
 }
 
 async function openPass(passId) {
@@ -160,6 +160,7 @@ function renderDetail() {
   const ascents = passAscents(pass.id);
   const ridden = new Set(ascents.map((a) => a.approachId));
   const hasPhoto = ascents.some((a) => a.hasPhoto);
+  const warnings = catalogue.approachSources.cautions[pass.id] || [];
   $("#detail").innerHTML = `
     <button type="button" class="back-button quiet" id="back-button">← Back to ${view === "map" ? "map" : "collection"}</button>
     <div class="detail-banner ${completed ? "" : "uncollected"}"><img src="${esc(imageFor(pass))}" alt="${hasPhoto ? "Your photo from this pass" : ""}">${hasPhoto ? "" : '<span class="illustration-label">Alpine illustration · not a photograph of this pass</span>'}</div>
@@ -171,29 +172,22 @@ function renderDetail() {
       <span class="status-pill ${completed ? "done" : ""}">${completed ? "✓ Collected" : "Still to ride"}</span>
       <button type="button" class="quiet" id="show-on-map">Show on map ↗</button>
     </div>
+    ${warnings.length ? `<aside class="route-cautions" aria-label="Source route cautions"><strong>Before you ride</strong>${warnings.map((warning) => `<p>${esc(warning)}</p>`).join("")}</aside>` : ""}
     <div class="detail-columns">
       <section aria-labelledby="approaches-title">
         <h2 id="approaches-title" class="section-heading">Choose your way up</h2>
-        <p class="section-intro">Each approach is its own ride. Complete any one to collect this pass.</p>
-        ${approaches.length ? approaches.map((a) => `
+        <p class="section-intro">Choose a preloaded approach and log your ascent. Any one collects this pass. Some choices are different starting points on the same road, not separate sides.</p>
+        ${approaches.filter((a) => a.verified || ridden.has(a.id)).map((a) => `
           <article class="approach">
             <h3>${esc(a.name)} ${ridden.has(a.id) ? '<span aria-label="Completed">✓</span>' : ""}</h3>
-            <p class="metrics">${a.distanceKm != null ? `${number(a.distanceKm)} km · ${number(a.gainM)} m gain · ${number(a.gradient)}% average` : "Distance, gain and gradient not verified"}</p>
+            <p class="metrics">${a.distanceKm != null ? `${number(a.distanceKm)} km · ${number(a.gainM)} m gain · ${number(a.gradient)}% average` : "Distance, gain and gradient not supplied for this starting point"}</p>
             <div class="approach-actions">
-              <span>${a.verified ? "Source-verified" : "Added by you"}${a.sourceUrl ? ` · <a href="${esc(a.sourceUrl)}" target="_blank" rel="noopener noreferrer">Route details ↗</a>` : ""}</span>
-              <button type="button" class="primary" data-log="${esc(a.id)}">${ridden.has(a.id) ? "Log another ascent" : "Log ascent"}</button>
+              <span>${a.sourceKind === "map-start" ? "Map-listed starting point" : a.verified ? "Source-verified route" : "Historical custom route"}${a.sourceUrl ? ` · <a href="${esc(a.sourceUrl)}" target="_blank" rel="noopener noreferrer">Source reference ↗</a>` : ""}</span>
+              ${a.verified ? `<button type="button" class="primary" data-log="${esc(a.id)}">${ridden.has(a.id) ? "Log another ascent" : "Log ascent"}</button>` : ""}
             </div>
-          </article>`).join("") : '<p class="journal-empty">Approaches for this pass have not been verified yet. Add the starting place or side you rode below.</p>'}
-        <details class="add-approach" ${approaches.length ? "" : "open"}>
-          <summary>Add an approach</summary>
-          <form id="approach-form" class="form-stack">
-            <label>Starting place or approach name<input name="name" required maxlength="160" placeholder="e.g. From Bormio (southwest)"></label>
-            <label>Source link <small>Optional, such as a quäldich route page</small><input type="url" name="sourceUrl" maxlength="2000" placeholder="https://www.quaeldich.de/…"></label>
-            <button type="submit">Add approach</button>
-          </form>
-        </details>
+          </article>`).join("")}
         <p class="section-footnote">${pass.sourceUrl ? `<a href="${esc(pass.sourceUrl)}" target="_blank" rel="noopener noreferrer">Original pass reference ↗</a> · ` : ""}<a href="https://www.quaeldich.de/paesse/" target="_blank" rel="noopener noreferrer">Research on quäldich ↗</a></p>
-        <p class="section-footnote">The approach list may be incomplete. Check road surfaces, seasonal closures and cycling access before riding. Summit elevation is not elevation gained.</p>
+        <p class="section-footnote">Every pass has preloaded choices from the source catalogue; these are not an exhaustive route inventory or a guarantee of paved access. Check road surfaces, seasonal closures and cycling access before riding. Summit elevation is not elevation gained.</p>
       </section>
       <section aria-labelledby="journal-title">
         <div class="journal-heading"><h2 id="journal-title">Your summit journal</h2><span class="muted">${ascents.length} ${ascents.length === 1 ? "ascent" : "ascents"}</span></div>
@@ -220,31 +214,6 @@ function renderDetail() {
     renderMarkers();
     map.setView([pass.latitude, pass.longitude], 12);
   });
-  $("#approach-form").oninput = () => { draft = true; };
-  $(".add-approach").addEventListener("toggle", run(async () => {
-    if (!$(".add-approach").open || !$("#ascent-form")) return;
-    if (!await allowLeave()) { $(".add-approach").open = false; return; }
-    draft = false;
-    $("#ascent-editor").innerHTML = "";
-  }));
-  $("#approach-form").onsubmit = run(async (event) => {
-    event.preventDefault();
-    if (saving) return;
-    const form = event.currentTarget;
-    const button = form.querySelector("button");
-    const values = Object.fromEntries(new FormData(form));
-    button.disabled = true;
-    saving = true;
-    try {
-      const result = await api("approaches", { ...values, passId: pass.id, revision: state.revision });
-      state = result.state;
-      draft = false;
-      renderDetail();
-      saving = false;
-      await startAscent(result.id);
-      notice("Approach added. You can now record your ascent.");
-    } finally { saving = false; button.disabled = false; }
-  });
 }
 
 async function preparePhoto(file) {
@@ -269,9 +238,7 @@ async function preparePhoto(file) {
 async function startAscent(approachId, existing) {
   if (!await allowLeave()) return;
   draft = false;
-  $(".add-approach").open = false;
-  $("#approach-form").reset();
-  const approaches = state.approaches.filter((a) => a.passId === selectedId);
+  const approaches = state.approaches.filter((a) => a.passId === selectedId && (a.verified || a.id === existing?.approachId));
   $("#ascent-editor").innerHTML = `
     <form id="ascent-form" class="ascent-form">
       <h3>${existing ? "Edit ascent" : "Record an ascent"}</h3>

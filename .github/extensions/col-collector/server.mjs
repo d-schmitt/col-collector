@@ -133,8 +133,8 @@ export async function startServer({ store, catalogue, geocode = createGeocoder(s
       if (request.method !== "POST") throw new InputError("Method not allowed.", 405);
       const input = await readJson(request);
       let result;
-      if (path === "api/approaches") result = store.addApproach(input);
-      else if (path === "api/ascents") result = store.saveAscent(input);
+      if (path === "api/approaches") throw new InputError("Approaches are now supplied by the catalogue. Reload the app and choose a preloaded approach.", 410);
+      if (path === "api/ascents") result = store.saveAscent(input);
       else if (path === "api/ascents/delete") result = store.deleteAscent(input);
       else if (path === "api/restore") result = store.restore(input);
       else if (path === "api/sync/connect") result = { sync: await sync.connect(input.repository) };

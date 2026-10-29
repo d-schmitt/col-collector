@@ -50,6 +50,19 @@ test("HTTP mutation, conflict and reload retain saved data", async (t) => {
   assert.equal((await fetch(server.url + "api/state").then((r) => r.json())).ascents.length, 1);
 });
 
+test("manual approach creation is retired and every pass is ready to log", async (t) => {
+  const { server } = await fixture(t);
+  const response = await fetch(server.url + "api/approaches", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ revision: 0, name: "New custom approach" }),
+  });
+  assert.equal(response.status, 410);
+  assert.match((await response.json()).error, /preloaded/);
+  const state = await fetch(server.url + "api/state").then((r) => r.json());
+  assert.equal(state.revision, 0);
+  assert.equal(new Set(state.approaches.filter((a) => a.verified).map((a) => a.passId)).size, 437);
+});
+
 test("geocoder validates coordinates, caches searches and throttles uncached requests", async (t) => {
   const { runtime } = await fixture(t);
   let calls = 0;

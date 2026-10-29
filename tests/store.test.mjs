@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtemp, rm, readFile, stat } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { Store, decodePhoto } from "../.github/extensions/col-collector/store.mjs";
 import { completedPassIds, filterPasses, validateDate } from "../.github/extensions/col-collector/model.mjs";
 
@@ -18,6 +19,12 @@ async function fixture(t) {
   return { store, path };
 }
 const save = (store, overrides = {}) => store.saveAscent({ revision: store.revision(), approachId: "stelvio-prad", ...overrides });
+function restoreLegacy(store, { name = "East side", passId = catalogue.passes[0].id, photo = PNG } = {}) {
+  const backup = store.export();
+  backup.approaches.push({ id: "legacy-route", passId, name, sourceUrl: "https://www.quaeldich.de/paesse/" });
+  backup.ascents.push({ id: "legacy-ride", approachId: "legacy-route", date: "2019-09-10", note: "<script>not executable</script>", photo, createdAt: "2019-09-10T12:00:00Z" });
+  store.restore({ revision: store.revision(), backup });
+}
 
 test("catalogue contains exactly both paved layers and valid distinct IDs", () => {
   assert.equal(catalogue.passes.length, 437);
@@ -31,6 +38,35 @@ test("catalogue contains exactly both paved layers and valid distinct IDs", () =
     assert.ok(p.sourceLayer.startsWith("Paved passes"));
   }
   assert.equal(catalogue.warnings.length, 2);
+});
+
+test("all 437 passes have source-backed preloaded choices and existing IDs survive", () => {
+  assert.equal(verified.length, 1340);
+  assert.equal(new Set(verified.map((a) => a.id)).size, verified.length);
+  assert.equal(new Set(verified.map((a) => a.passId)).size, 437);
+  for (const pass of catalogue.passes) assert.ok(verified.some((a) => a.passId === pass.id), pass.name);
+  assert.deepEqual(verified.filter((a) => a.passId === "pass-dab2867494683188").map((a) => a.name),
+    ["From Altdorf (Tell monument)", "From Linthal station", "From Schattdorf"]);
+  for (const id of ["stelvio-prad", "stelvio-bormio", "stelvio-santa-maria", "galibier-valloire", "galibier-lautaret"]) {
+    assert.ok(verified.some((a) => a.id === id));
+  }
+  for (const approach of verified.filter((a) => a.sourceKind === "map-start")) {
+    assert.match(approach.sourceUrl, /^https?:\/\//);
+    assert.equal(approach.distanceKm, undefined);
+    assert.equal(approach.gainM, undefined);
+  }
+});
+
+test("every pass can be collected without creating an approach", async (t) => {
+  const { store } = await fixture(t);
+  for (const pass of catalogue.passes) {
+    const approach = verified.find((a) => a.passId === pass.id);
+    save(store, { approachId: approach.id });
+  }
+  const state = store.state();
+  assert.equal(state.ascents.length, 437);
+  assert.equal(completedPassIds(state.approaches, state.ascents).size, 437);
+  assert.deepEqual(store.export().approaches, []);
 });
 
 test("one ascent completes only its pass, not other approaches; repeats count once", async (t) => {
@@ -89,13 +125,16 @@ test("deleting last ascent resets completion", async (t) => {
   assert.equal(completedPassIds(store.state().approaches, store.state().ascents).size, 0);
 });
 
-test("custom approaches retain their source and cannot duplicate a name", async (t) => {
+test("historical custom routes survive, even when their name matches a preloaded route", async (t) => {
   const { store } = await fixture(t);
-  const input = { revision: store.revision(), passId: catalogue.passes[0].id, name: "From the valley", sourceUrl: "https://www.quaeldich.de/paesse/" };
-  const approach = store.addApproach(input);
-  assert.ok(store.state().approaches.find((a) => a.id === approach.id));
-  assert.throws(() => store.addApproach({ ...input, revision: store.revision(), name: "FROM THE VALLEY" }), /already exists/);
-  assert.throws(() => store.addApproach({ ...input, revision: store.revision(), name: "Other", sourceUrl: "javascript:alert(1)" }), /HTTPS/);
+  restoreLegacy(store, { name: verified[0].name, passId: verified[0].passId });
+  assert.equal(store.state().approaches.find((a) => a.id === "legacy-route").sourceKind, "legacy");
+  assert.throws(() => save(store, { approachId: "legacy-route" }), /preloaded approach/);
+  save(store, { id: "legacy-ride", approachId: "legacy-route", note: "Edited historical memory" });
+  assert.equal(store.state().ascents[0].note, "Edited historical memory");
+  const bad = store.export();
+  bad.approaches[0].sourceUrl = "javascript:alert(1)";
+  assert.throws(() => store.restore({ revision: store.revision(), backup: bad }), /HTTPS/);
 });
 
 test("invalid inputs do not mutate saved data", async (t) => {
@@ -140,8 +179,7 @@ test("records and photos survive opening another store", async (t) => {
 
 test("backup round-trips custom approaches, repeat ascents, notes and photos", async (t) => {
   const { store } = await fixture(t);
-  const { id } = store.addApproach({ revision: store.revision(), passId: catalogue.passes[0].id, name: "East side" });
-  save(store, { approachId: id, date: "2019-09-10", note: "<script>not executable</script>", photo: PNG });
+  restoreLegacy(store);
   save(store);
   const backup = store.export();
   store.restore({ revision: store.revision(), backup: { format: backup.format, version: 1, approaches: [], ascents: [] } });
@@ -150,6 +188,36 @@ test("backup round-trips custom approaches, repeat ascents, notes and photos", a
   const restored = store.export();
   assert.deepEqual(restored.ascents, backup.ascents);
   assert.deepEqual(restored.approaches, backup.approaches);
+});
+
+test("schema-one passports gain all routes without changing ride IDs, photos or sync state", async (t) => {
+  const dir = await mkdtemp(join(tmpdir(), "col-migration-"));
+  const path = join(dir, "passport.sqlite");
+  const old = new DatabaseSync(path);
+  old.exec(`
+    CREATE TABLE metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
+    INSERT INTO metadata VALUES ('schemaVersion', '1'), ('revision', '7');
+    CREATE TABLE approaches (id TEXT PRIMARY KEY, pass_id TEXT NOT NULL, name TEXT NOT NULL,
+      source_url TEXT, distance_km REAL, gain_m REAL, gradient REAL, verified INTEGER NOT NULL DEFAULT 0);
+    CREATE TABLE ascents (id TEXT PRIMARY KEY, approach_id TEXT NOT NULL REFERENCES approaches(id),
+      date TEXT NOT NULL, note TEXT NOT NULL, photo BLOB, mime TEXT, created_at TEXT NOT NULL);
+  `);
+  const previous = JSON.parse(await readFile(new URL("../.github/extensions/col-collector/data/verified-approaches.json", import.meta.url)));
+  for (const a of previous) old.prepare("INSERT INTO approaches VALUES (?, ?, ?, ?, ?, ?, ?, 1)")
+    .run(a.id, a.passId, a.name, a.sourceUrl, a.distanceKm, a.gainM, a.gradient);
+  old.prepare("INSERT INTO ascents VALUES ('old-ride', 'stelvio-prad', '', 'Keep this', ?, 'image/png', '2020-01-01T12:00:00Z')")
+    .run(Buffer.from(PNG.split(",")[1], "base64"));
+  old.prepare("INSERT INTO metadata VALUES ('githubSync', ?)").run(JSON.stringify({ syncedRevision: 7, baseSha: "unchanged" }));
+  old.close();
+  const store = await Store.open(path, catalogue, verified);
+  t.after(async () => { store.close(); await rm(dir, { recursive: true }); });
+  assert.equal(store.state().approaches.length, 1340);
+  assert.equal(store.state().ascents[0].id, "old-ride");
+  assert.equal(store.state().ascents[0].note, "Keep this");
+  assert.equal(Buffer.from(store.photo("old-ride").bytes).toString("base64"), PNG.split(",")[1]);
+  assert.equal(store.revision(), 7);
+  assert.deepEqual(store.getMetadata("githubSync"), { syncedRevision: 7, baseSha: "unchanged" });
+  assert.equal(store.getMetadata("schemaVersion"), 2);
 });
 
 test("restore is atomic for unknown references, duplicates and corrupt photos", async (t) => {

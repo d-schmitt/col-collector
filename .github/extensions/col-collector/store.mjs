@@ -49,7 +49,7 @@ export class Store {
       PRAGMA busy_timeout = 5000;
       CREATE TABLE IF NOT EXISTS metadata (key TEXT PRIMARY KEY, value TEXT NOT NULL);
       INSERT OR IGNORE INTO metadata VALUES ('revision', '0');
-      INSERT OR IGNORE INTO metadata VALUES ('schemaVersion', '1');
+      INSERT OR IGNORE INTO metadata VALUES ('schemaVersion', '2');
       CREATE TABLE IF NOT EXISTS approaches (
         id TEXT PRIMARY KEY, pass_id TEXT NOT NULL, name TEXT NOT NULL,
         source_url TEXT, distance_km REAL, gain_m REAL, gradient REAL,
@@ -63,13 +63,17 @@ export class Store {
       CREATE TABLE IF NOT EXISTS geocache (query TEXT PRIMARY KEY, response TEXT NOT NULL, saved_at INTEGER NOT NULL);
       CREATE TABLE IF NOT EXISTS sync_lock (id INTEGER PRIMARY KEY CHECK(id=1), token TEXT NOT NULL, expires_at INTEGER NOT NULL);
     `);
-    if (this.db.prepare("SELECT value FROM metadata WHERE key='schemaVersion'").get().value !== "1") {
+    if (!["1", "2"].includes(this.db.prepare("SELECT value FROM metadata WHERE key='schemaVersion'").get().value)) {
       this.db.close();
       throw new Error("This passport uses a newer schema. Upgrade Col Collector before opening it.");
     }
     this.db.exec("BEGIN IMMEDIATE");
     try {
+      if (!this.db.prepare("PRAGMA table_info(approaches)").all().some((column) => column.name === "source_kind")) {
+        this.db.exec("ALTER TABLE approaches ADD COLUMN source_kind TEXT NOT NULL DEFAULT 'legacy'");
+      }
       this.seed();
+      this.db.prepare("UPDATE metadata SET value='2' WHERE key='schemaVersion'").run();
       this.db.exec("COMMIT");
     } catch (error) {
       this.db.exec("ROLLBACK");
@@ -79,11 +83,17 @@ export class Store {
   }
 
   seed() {
-    const insert = this.db.prepare("INSERT OR IGNORE INTO approaches VALUES (?, ?, ?, ?, ?, ?, ?, 1)");
+    const insert = this.db.prepare(`INSERT INTO approaches
+      (id, pass_id, name, source_url, distance_km, gain_m, gradient, verified, source_kind)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 1, ?)
+      ON CONFLICT(id) DO UPDATE SET name=excluded.name, source_url=excluded.source_url,
+      distance_km=excluded.distance_km, gain_m=excluded.gain_m, gradient=excluded.gradient,
+      source_kind=excluded.source_kind WHERE approaches.verified=1`);
     for (const approach of this.verifiedApproaches) {
       if (!this.passIds.has(approach.passId)) throw new Error(`Unknown curated pass: ${approach.passId}`);
       insert.run(approach.id, approach.passId, approach.name, approach.sourceUrl,
-        approach.distanceKm ?? null, approach.gainM ?? null, approach.gradient ?? null);
+        approach.distanceKm ?? null, approach.gainM ?? null, approach.gradient ?? null,
+        approach.sourceKind ?? "verified-route");
     }
   }
 
@@ -96,7 +106,8 @@ export class Store {
       return {
         revision: this.revision(),
         approaches: this.db.prepare(`SELECT id, pass_id AS passId, name, source_url AS sourceUrl,
-          distance_km AS distanceKm, gain_m AS gainM, gradient, verified FROM approaches ORDER BY name`).all(),
+          distance_km AS distanceKm, gain_m AS gainM, gradient, verified, source_kind AS sourceKind
+          FROM approaches ORDER BY name`).all(),
         ascents: this.db.prepare(`SELECT id, approach_id AS approachId, date, note,
           photo IS NOT NULL AS hasPhoto, created_at AS createdAt FROM ascents ORDER BY created_at DESC`).all(),
       };
@@ -118,32 +129,20 @@ export class Store {
     } catch (error) { this.db.exec("ROLLBACK"); throw error; }
   }
 
-  addApproach(input) {
-    const passId = id(input.passId);
-    if (!this.passIds.has(passId)) throw new InputError("This pass is not in the catalogue.");
-    const name = text(input.name, "Approach name", 160, true);
-    const sourceUrl = validateSourceUrl(input.sourceUrl);
-    return this.mutate(input.revision, () => {
-      const duplicate = this.db.prepare("SELECT name FROM approaches WHERE pass_id=?").all(passId)
-        .some((row) => row.name.toLocaleLowerCase() === name.toLocaleLowerCase());
-      if (duplicate) throw new InputError("An approach with that name already exists for this pass.");
-      const approachId = randomUUID();
-      this.db.prepare("INSERT INTO approaches (id, pass_id, name, source_url) VALUES (?, ?, ?, ?)")
-        .run(approachId, passId, name, sourceUrl);
-      return { id: approachId };
-    });
-  }
-
   saveAscent(input) {
     const approachId = id(input.approachId);
     const date = validateDate(input.date ?? "");
     const note = text(input.note ?? "", "Note", 4000);
     const photo = decodePhoto(input.photo);
     return this.mutate(input.revision, () => {
-      if (!this.db.prepare("SELECT id FROM approaches WHERE id=?").get(approachId)) throw new InputError("Choose an existing approach.");
+      const approach = this.db.prepare("SELECT verified FROM approaches WHERE id=?").get(approachId);
+      if (!approach) throw new InputError("Choose an existing approach.");
       const ascentId = input.id ? id(input.id) : randomUUID();
       const existing = input.id ? this.db.prepare("SELECT * FROM ascents WHERE id=?").get(ascentId) : null;
       if (input.id && !existing) throw new InputError("This ascent no longer exists.", 404);
+      if (!approach.verified && existing?.approach_id !== approachId) {
+        throw new InputError("Choose a preloaded approach for a new ascent. Historical custom routes are retained only for existing records.");
+      }
       const keepPhoto = input.photo === undefined && existing;
       this.db.prepare(`INSERT INTO ascents VALUES (?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(id) DO UPDATE SET approach_id=excluded.approach_id, date=excluded.date,
@@ -204,7 +203,7 @@ export class Store {
       if (syncConfig) this.setMetadata("syncRecovery", this.backupData());
       this.db.exec("DELETE FROM ascents; DELETE FROM approaches WHERE verified=0;");
       const approachIds = new Set(this.verifiedApproaches.map((a) => a.id));
-      const names = new Set(this.verifiedApproaches.map((a) => `${a.passId}|${a.name.toLocaleLowerCase()}`));
+      const names = new Set();
       for (const a of data.approaches) {
         if (!a || !this.passIds.has(a.passId)) throw new InputError("A backup approach refers to an unknown pass.");
         const approachId = id(a.id);
@@ -218,7 +217,7 @@ export class Store {
       }
       const ascentIds = new Set();
       for (const a of data.ascents) {
-        if (!a || !approachIds.has(a.approachId)) throw new InputError("A backup ascent refers to an unknown approach.");
+        if (!a || !approachIds.has(a.approachId)) throw new InputError("A backup ascent refers to an unknown approach. Update the app's catalogue before restoring.");
         const ascentId = id(a.id);
         if (ascentIds.has(ascentId)) throw new InputError("The backup contains duplicate ascents.");
         ascentIds.add(ascentId);

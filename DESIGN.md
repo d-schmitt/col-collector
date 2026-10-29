@@ -31,8 +31,12 @@ ascents. Deleting the final ascent reverses completion.
 - Map browsing shows a corresponding list of passes in the current bounds.
 - Pass details replace the explorer instead of opening a small modal.
 - At narrow widths, details stack and the collection uses two compact columns.
-- Source-verified approaches display metrics and links. Unverified approaches
-  explicitly say their metrics are unknown.
+- Every pass has preloaded choices; users never create an approach. Map-listed
+  starting points are labeled separately from metric-bearing verified routes.
+  Multiple starts may share a road; missing statistics are explicitly unknown.
+  Source surface/access cautions appear above the choices.
+- Historical custom routes remain visible when attached to a saved ascent and
+  can be retained when editing it, but are not offered for new records.
 - Forms use visible labels; dates, photos and notes are optional.
 - Destructive actions use an in-document confirmation dialog, not host-native
   JavaScript dialogs that may be blocked inside an iframe.

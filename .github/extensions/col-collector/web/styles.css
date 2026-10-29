@@ -130,8 +130,8 @@ progress::-moz-progress-bar { background: var(--green); border-radius: 4px; }
 .approach .metrics { color: var(--muted); font-size: .83rem; margin-bottom: 10px; }
 .approach-actions { display: flex; justify-content: space-between; align-items: center; gap: 10px; flex-wrap: wrap; font-size: .78rem; }
 .approach-actions button { min-height: 36px; font-size: .8rem; }
-.add-approach { margin-top: 20px; }
-.add-approach summary { cursor: pointer; font-weight: 650; padding: 8px 0; }
+.route-cautions { padding: 16px 18px; border: 1px solid var(--line); border-radius: 6px; background: var(--surface); font-size: .86rem; }
+.route-cautions p { margin-top: 7px; color: var(--muted); max-width: 75ch; }
 .form-stack { display: grid; gap: 15px; padding-top: 12px; }
 .form-stack small { font-weight: 400; }
 .journal-heading { display: flex; gap: 15px; align-items: center; justify-content: space-between; }

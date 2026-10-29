@@ -1,0 +1,302 @@
+{
+  "sourceUrl": "https://www.google.com/maps/d/viewer?mid=1GPHWvjnIKIObSl2m5ykGzmm-BJd5aXWU",
+  "sourceName": "cycloclimbing.com / selected Google My Maps layers",
+  "importedAt": "2026-10-29T21:48:28.374215+00:00",
+  "passCount": 437,
+  "approachCount": 1340,
+  "mapStartCount": 1335,
+  "verifiedRouteCount": 5,
+  "cautions": {
+    "pass-5ee4d83d23902af5": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-5acb3113e44d52af": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach.",
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-6f9994e9622c88a9": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-d61e28f5bdfd40c6": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-ae3496965676e65c": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-40123b314730bc4c": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-af113a9a6ea9557f": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-b0e9124e78235b64": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-1d62c6180e58fae0": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-c90277f252b79e83": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-97d5be7972456c46": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-d6b8a7eccf8d5e83": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-68950632241729df": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-86cbfa14f365d2b7": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-85ef4a7c14109e69": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-fea53d5630797a38": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-9d0ae98c3361e7d9": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-db71aa2a6706dbfe": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-e79b9754458b00bd": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach.",
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-6d682d810cdd1682": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-f4f5e629461f3eea": [
+      "The source flags access restrictions, closures or road damage. Check current cycling access before riding."
+    ],
+    "pass-6477e217337ccd72": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-aad59e35ba85614d": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-c3f744e197aa12d7": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-16342fe4d43cf8c4": [
+      "The source flags access restrictions, closures or road damage. Check current cycling access before riding."
+    ],
+    "pass-72e5b710e7f41d0d": [
+      "The source flags access restrictions, closures or road damage. Check current cycling access before riding."
+    ],
+    "pass-b24f2ca3afa87d0d": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-91fd74338cb52768": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-5f72f8a71800666d": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-ed3e9f18178b9fc8": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-092aa75c44c2aa83": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-e7e63a0cfe4741ef": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach.",
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-b744bc37fa5747a4": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-fe6546b60a7d62a5": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-a26408471de01f80": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-39cf6e6cda595f69": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-1fa48ea0ac9eb544": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-e00dd9c9b9ac4842": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-a461a291cb0eca4b": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-fb6fa6ab6fa51ee6": [
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-eec817f0f1fb5231": [
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-97bcd0cdec0703c8": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-894bab3e98636df6": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-58611cf9f499b219": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-b021ee2d2a71f002": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-2e83e96d0c4850a1": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-3514f71d0d98d15d": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach.",
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-c58b1933038957d8": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-e4f8fcdf13ab1902": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-7940e58c5b7c62f3": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-c5245fffee9ed416": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-b7473d3f2534cf73": [
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-b20736c217aaa2d0": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-78d1cc17fdb13550": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-a977e130ca08ad4b": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-a30d48b7dde209db": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-c5581568bcf46e83": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-a2d5b3dec66bf38b": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-f4f3e4c693139a27": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-ed3d94905164906c": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-9b1837f5b4ca22dd": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach.",
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-63525a04135166b0": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-a2f81aa29ea01012": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-7361e3ef994c6d13": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach.",
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-c89358dad094d2d1": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-99bbc6a318d2be73": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-847ddae6908fac5f": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-8e2f0bb09b7ce2cd": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-a95aa08492c52593": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-e5dfbb5333407dd1": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-2ba5a05d10cda858": [
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-0782b2abf43ddf08": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-8ac8d651a95d47e8": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-add83c60ced42100": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-e6ff6344d1ddd109": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-c8c795c6036a23f9": [
+      "The source flags access restrictions, closures or road damage. Check current cycling access before riding.",
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-35fc7a315cab3097": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-411d77b68425a22a": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-8c1b3b460d16bddf": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-f52f971bf9d2e898": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-39d817ba9b8ad888": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-2278e9c171d5694f": [
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-e5550817a3714bc7": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-cb82627bc151a01f": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach.",
+      "The source flags access restrictions, closures or road damage. Check current cycling access before riding."
+    ],
+    "pass-498fd8db8a5c823b": [
+      "The source flags access restrictions, closures or road damage. Check current cycling access before riding."
+    ],
+    "pass-2e639a09ac94ab91": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-ffc2dcb8fc1cbedb": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-736f89cd420d172e": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-35cd84148ef454a6": [
+      "The source flags access restrictions, closures or road damage. Check current cycling access before riding."
+    ],
+    "pass-2514f3ae4effd1a9": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-280edf95779eb25a": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach.",
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-453ed37e4e1d93d6": [
+      "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
+    ],
+    "pass-fee96721d7899c9a": [
+      "The source flags very steep or difficult sections. Check the route and gearing before riding."
+    ],
+    "pass-2b514e9efd165950": [
+      "The source flags access restrictions, closures or road damage. Check current cycling access before riding."
+    ]
+  }
+}

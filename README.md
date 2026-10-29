@@ -11,8 +11,9 @@ ascent journal. The same interface can also run in a local browser.
   elevation/completion/name filters.
 - **A collectible passport:** unfinished passes are grayscale; completed passes
   become colorful. Your own summit photo appears on the card when available.
-- **Approach-level tracking:** riding any one approach collects the pass, without
-  marking its other approaches complete. Repeat ascents are separate records.
+- **Preloaded approaches for every pass:** choose from 1,340 source-backed options,
+  without adding your own route. Riding any one collects the pass, without marking
+  the other choices complete. Repeat ascents are separate records.
 - **An optional date, photo and note** for each ascent, with editing and deletion.
 - **Private local storage, backups and restoration**, with stale-write protection
   when several panels or sessions share the passport.
@@ -79,26 +80,60 @@ as identifiers. IDs derive from the source name and coordinates, not list order.
 Renaming or moving a source entry changes its generated ID, so catalogue refreshes
 must be reviewed before replacing a version used by existing passports.
 
-**Approach coverage is deliberately explicit:** five approaches for Stelvio and
-Galibier have names and metrics checked against
-[quäldich](https://www.quaeldich.de/paesse/) on 29 October 2026. Other passes show
-that approach data is unverified and let you add a starting place/side and an
-optional source link. Even a verified list is not claimed to be exhaustive.
-There is no bulk scraper, copied article text, or third-party photo collection.
-Summit elevations remain those of the selected map, even where another source
-uses a different figure. Source rights remain with their respective owners.
+**Every one of the 437 passes has preloaded choices.** The approach catalogue
+contains 1,335 starting-point variants extracted from the map's factual start
+locations, plus five previously verified routes for Stelvio and Galibier. The
+five routes retain their original IDs and their metrics checked against
+[quäldich](https://www.quaeldich.de/paesse/) on 29 October 2026. Duplicate
+Stelvio starting points are reconciled with those existing IDs.
+
+The UI distinguishes **Map-listed starting point** from **Source-verified route**.
+Different starts can share the same road; they are not claimed to be separate
+sides or an exhaustive inventory of all possible routes. Distance, elevation
+gain and gradient stay unknown for map-listed starts rather than being inferred
+from summit elevation. For example, Klausenpass offers Altdorf (Tell monument),
+Schattdorf and Linthal station directly.
+
+The source's "paved" layers also contain notes about gravel, walking sections,
+steep ramps and access restrictions. These are surfaced as pass-level cautions;
+membership in a paved layer is **not a guarantee that every listed route is fully
+paved or currently open**. Users must check the linked reference for their choice.
+
+There is no automated quäldich crawler, copied article text, or third-party photo
+collection. The full starting-point catalogue comes from the user's selected
+map export. Summit elevations remain those of that map, even where another
+source uses a different figure. Source rights remain with their respective owners.
 
 To refresh the snapshot deliberately:
 
 ```sh
 npm run catalogue:import
+npm run approaches:import
 # Or use a previously downloaded KML:
 python3 scripts/import_catalogue.py --input /path/to/source.kml
+python3 scripts/import_approaches.py --input /path/to/source.kml
 ```
 
 The importer rejects missing layers, invalid coordinates, and duplicate
 identities rather than silently dropping records. Missing numerical elevations
 and layer-boundary exceptions are reported in `catalogue.json`.
+
+The approach importer checks source names/coordinates against the pass catalogue
+and refuses incomplete coverage. It excludes descriptive annotations and side
+destinations, handles explicitly named route variants, preserves the five original
+route IDs, and assigns deterministic IDs to source-listed starts. An optional
+`--audit /path/outside/repo/audit.json` records extraction decisions for review.
+`approach-sources.json` stores coverage counts, provenance and cautions;
+`verified-approaches.json` retains the separately verified metric-bearing routes.
+Review catalogue changes before publishing a refresh.
+
+**Existing passports:** startup migrates the local database to schema 2 and adds
+the preloaded choices without changing ascent IDs, photos, completion, personal
+revision, or the GitHub sync baseline. Previously entered custom routes remain
+attached to historical ascents, which can still be edited and restored from
+backup. New ascents must use a preloaded choice; the manual-entry form and API
+are retired. Update the app on all devices before pulling records that use newly
+added catalogue IDs. Older app versions cannot open the schema-2 database.
 
 ## Privacy, persistence and recovery
 
@@ -227,8 +262,10 @@ npm run test:browser
 
 Tests use disposable databases, never the default personal passport. Browser
 tests stub external map tiles and location results; they cover both viewport
-sizes, filtering, custom approaches, repeat ascents, optional dates, photo
+sizes, filtering, preloaded Klausenpass approaches, repeat ascents, optional dates, photo
 editing, backup/restore, deletion, and stale-write recovery.
+Importer/storage tests require coverage of all 437 passes and preserve historical
+custom-route records through the schema migration.
 Sync tests use a fake GitHub service for separate photos, multi-device round
 trips, private-only enforcement, push/pull conflicts, concurrent edits, retries
 after uncertain outcomes, and recovery. No test uploads synthetic rides to a
