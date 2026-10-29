@@ -1,0 +1,22 @@
+{
+  "name": "col-collector",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "engines": { "node": ">=22.16" },
+  "scripts": {
+    "start": "node .github/extensions/col-collector/preview.mjs",
+    "test": "node --test tests/*.test.mjs",
+    "test:browser": "playwright test",
+    "catalogue:import": "python3 scripts/import_catalogue.py",
+    "approaches:import": "python3 scripts/import_approaches.py",
+    "assets": "node scripts/copy-assets.mjs",
+    "postinstall": "npm run assets"
+  },
+  "dependencies": {
+    "leaflet": "1.9.4"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.56.1"
+  }
+}

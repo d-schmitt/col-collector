@@ -1,0 +1,47 @@
+[
+  {
+    "id": "stelvio-prad",
+    "passId": "pass-f2c768b7d43bf42f",
+    "name": "From Prad / Prato allo Stelvio (northeast)",
+    "distanceKm": 24.6,
+    "gainM": 1844,
+    "gradient": 7.5,
+    "sourceUrl": "https://www.quaeldich.de/paesse/stilfser-joch/#nordostrampe-von-prad"
+  },
+  {
+    "id": "stelvio-bormio",
+    "passId": "pass-f2c768b7d43bf42f",
+    "name": "From Bormio (southwest)",
+    "distanceKm": 19.4,
+    "gainM": 1477,
+    "gradient": 7.6,
+    "sourceUrl": "https://www.quaeldich.de/paesse/stilfser-joch/"
+  },
+  {
+    "id": "stelvio-santa-maria",
+    "passId": "pass-f2c768b7d43bf42f",
+    "name": "From Santa Maria via Umbrailpass (northwest)",
+    "distanceKm": 16.4,
+    "gainM": 1415,
+    "gradient": 8.6,
+    "sourceUrl": "https://www.quaeldich.de/paesse/stilfser-joch/"
+  },
+  {
+    "id": "galibier-valloire",
+    "passId": "pass-9409521ac358b0c7",
+    "name": "From Valloire (north)",
+    "distanceKm": 17.6,
+    "gainM": 1220,
+    "gradient": 6.9,
+    "sourceUrl": "https://www.quaeldich.de/paesse/col-du-galibier/#nordrampe-von-valloire"
+  },
+  {
+    "id": "galibier-lautaret",
+    "passId": "pass-9409521ac358b0c7",
+    "name": "From Col du Lautaret (south)",
+    "distanceKm": 8.6,
+    "gainM": 597,
+    "gradient": 6.9,
+    "sourceUrl": "https://www.quaeldich.de/paesse/col-du-galibier/"
+  }
+]

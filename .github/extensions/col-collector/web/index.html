@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="color-scheme" content="light dark">
+  <title>Col Collector</title>
+  <link rel="icon" href="mountain.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="vendor/leaflet.css">
+  <link rel="stylesheet" href="styles.css">
+  <script defer src="vendor/leaflet.js"></script>
+  <script type="module" src="app.js"></script>
+</head>
+<body>
+  <!-- THESIS: An Alpine cycling passport, not a dashboard. The pass is the collectible.
+       OWN-WORLD: Map contours, strong readable type, restrained alpine green, color earned through riding.
+       STORY: Find a pass, choose an approach, record the ride, see the collection change.
+       FIRST VIEWPORT: Passport heading, honest progress, map/collection switch, source-layer filters.
+       FORM: A user-requested collectible card grid paired with a practical map; no invented scenery photos. -->
+  <a class="skip-link" href="#main">Skip to passes</a>
+  <header class="app-header">
+    <a class="brand" href="./" aria-label="Col Collector home">
+      <svg viewBox="0 0 40 40" aria-hidden="true"><path d="M3 30 16 8l7 12 4-6 10 16H3Z"/><path d="m11 17 5 5 5-5"/></svg>
+      <span>Col Collector<span class="brand-caption">Your cycling passport to the Alps</span></span>
+    </a>
+    <details class="tools">
+      <summary>Passport tools</summary>
+      <div class="tools-menu">
+        <button id="github-sync-button" type="button">GitHub sync</button>
+        <button id="backup-button" type="button">Download backup</button>
+        <label class="file-button" for="restore-file">Restore backup</label>
+        <input id="restore-file" type="file" accept=".json,application/json" hidden>
+        <p>Records stay on this device unless you manually push them to your private repository. Backups include photos.</p>
+        <p><a href="https://www.google.com/maps/d/viewer?mid=1GPHWvjnIKIObSl2m5ykGzmm-BJd5aXWU" target="_blank" rel="noopener noreferrer">Original pass map ↗</a></p>
+      </div>
+    </details>
+  </header>
+  <div id="notice" class="notice" role="status" hidden></div>
+  <div id="error" class="error" role="alert" hidden>
+    <span id="error-text"></span>
+    <button id="reload-button" type="button">Reload records</button>
+    <button id="dismiss-error" class="quiet" type="button" aria-label="Dismiss error">Dismiss</button>
+  </div>
+  <main id="main">
+    <div id="loading" class="loading" role="status">Opening your Alpine passport…</div>
+    <section id="sync-panel" class="sync-panel" aria-labelledby="sync-title" hidden>
+      <div class="journal-heading"><h2 id="sync-title" tabindex="-1">Private GitHub backup</h2><button id="close-sync" class="quiet" type="button">Close</button></div>
+      <p class="section-intro">Manually sync your passport and photos to a separate private repository. GitHub CLI handles authentication; no token is saved in your backup.</p>
+      <form id="sync-connect-form" class="form-stack">
+        <label for="sync-repository">Private data repository</label>
+        <div class="input-action"><input id="sync-repository" required maxlength="200" placeholder="your-name/col-collector-data" autocapitalize="off" spellcheck="false"><button type="submit">Connect</button></div>
+      </form>
+      <p id="sync-status" class="sync-status" role="status">Loading sync settings…</p>
+      <div class="form-actions">
+        <button id="sync-push" class="primary" type="button" disabled>Push backup</button>
+        <button id="sync-pull" type="button" disabled>Pull backup</button>
+        <button id="sync-refresh" class="quiet" type="button">Refresh status</button>
+      </div>
+      <details class="sync-recovery">
+        <summary>Conflicts and recovery</summary>
+        <p>Push never overwrites an unseen remote backup. Pull stops if you have unpushed changes. To deliberately take the remote copy, download your current backup first, then replace local records below.</p>
+        <div class="form-actions">
+          <button id="sync-replace" class="danger" type="button" disabled>Replace local from GitHub</button>
+          <button id="sync-download-recovery" type="button" disabled>Download pre-pull recovery</button>
+        </div>
+      </details>
+      <p class="section-footnote">Repository privacy is checked before every transfer. GitHub history keeps earlier photos and notes even after deletion in the app. A private repository is access-controlled, not end-to-end encrypted.</p>
+    </section>
+    <section id="explorer" hidden aria-label="Pass explorer">
+      <div class="collection-heading">
+        <div><h1>Your Alpine collection</h1><p>A road, a summit, a story. Which pass is next?</p></div>
+        <div class="progress-block">
+          <strong id="progress-label">0 / 437 collected</strong>
+          <progress id="progress" value="0" max="437" aria-label="Completed passes"></progress>
+        </div>
+      </div>
+      <div class="explorer-controls">
+        <nav class="view-switch" aria-label="Explore view">
+          <button type="button" id="collection-tab" aria-pressed="true">Collection</button>
+          <button type="button" id="map-tab" aria-pressed="false">Map</button>
+        </nav>
+        <div class="filters">
+          <label>Summit group
+            <select id="group-filter">
+              <option value="all">All paved passes</option>
+              <option value="high">Above 2,000 m</option>
+              <option value="low">Below 2,000 m</option>
+            </select>
+          </label>
+          <label>Progress
+            <select id="status-filter">
+              <option value="all">All passes</option>
+              <option value="todo">Still to ride</option>
+              <option value="done">Collected</option>
+            </select>
+          </label>
+        </div>
+      </div>
+      <section id="map-view" hidden aria-label="Map of Alpine passes">
+        <form id="location-form" class="location-search">
+          <label for="location-input">Find a location</label>
+          <div class="input-action">
+            <input id="location-input" name="location" type="search" placeholder="Try Bormio, Innsbruck or Briançon" maxlength="160" required autocomplete="off">
+            <button type="submit" class="primary">Search</button>
+          </div>
+          <small>Search is sent to Photon. Map tiles come from OpenStreetMap.</small>
+        </form>
+        <div id="location-results" aria-live="polite"></div>
+        <div class="map-toolbar"><span id="map-caption">Explore the Alps</span><button id="fit-map" type="button">Show all matching passes</button></div>
+        <div id="map" aria-label="Interactive pass map"></div>
+        <p id="map-error" class="inline-error" hidden>Map tiles could not load. Check your connection; pass markers and the collection remain available.</p>
+        <div class="map-legend"><span><i class="legend-dot"></i>Still to ride</span><span><i class="legend-dot done"></i>Collected</span><span>Click a marker to open a pass</span></div>
+      </section>
+      <div class="list-heading">
+        <h2 id="list-title">The whole collection</h2>
+        <label class="pass-search"><span class="sr-only">Filter passes by name</span><input id="pass-search" type="search" placeholder="Find a pass by name…" maxlength="160"></label>
+      </div>
+      <p id="result-count" class="muted" aria-live="polite"></p>
+      <div id="cards" class="cards"></div>
+      <div id="empty" class="empty" hidden><h3>No passes here yet</h3><p id="empty-text"></p><button id="reset-filters" type="button">Reset filters</button></div>
+      <footer class="source-note">Catalogue: <a href="https://cycloclimbing.com" target="_blank" rel="noopener noreferrer">cycloclimbing.com</a> via your selected Google map. Group membership follows the original two paved layers. Pass accessibility and road conditions can change.</footer>
+    </section>
+    <section id="detail" hidden aria-label="Pass details"></section>
+  </main>
+  <dialog id="confirmation" aria-labelledby="confirmation-title" aria-describedby="confirmation-message">
+    <h2 id="confirmation-title">Confirm change</h2>
+    <p id="confirmation-message"></p>
+    <form method="dialog" class="form-actions">
+      <button value="cancel" autofocus>Cancel</button>
+      <button value="confirm" class="primary" id="confirmation-accept">Continue</button>
+    </form>
+  </dialog>
+  <footer class="app-footer"><span>Made for the long way up.</span><span>Local-first · Optional private GitHub backup</span></footer>
+</body>
+</html>
