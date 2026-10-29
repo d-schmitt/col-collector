@@ -124,6 +124,7 @@ progress::-moz-progress-bar { background: var(--green); border-radius: 4px; }
 .detail-columns { display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr); gap: 40px; margin-top: 28px; }
 .section-heading { margin-bottom: 10px; }
 .section-intro { color: var(--muted); font-size: .86rem; max-width: 65ch; margin-bottom: 15px; }
+.unknown-approach { margin-bottom: 16px; }
 .approach { padding: 18px 0; border-bottom: 1px solid var(--line); }
 .approach:first-of-type { border-top: 1px solid var(--line); }
 .approach h3 { font-size: .96rem; margin-bottom: 7px; }

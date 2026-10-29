@@ -15,6 +15,7 @@ EXPORT = "https://www.google.com/maps/d/kml?mid=1GPHWvjnIKIObSl2m5ykGzmm-BJd5aXW
 LAYERS = {"Paved passes +2000": "high", "Paved passes -2000": "low"}
 NS = {"k": "http://www.opengis.net/kml/2.2"}
 DESTINATION = Path(__file__).resolve().parents[1] / ".github/extensions/col-collector/data/catalogue.json"
+DISPLAY_NAMES = {"pass-965d3e148f028ea0": "Mortirolo"}
 
 
 def number(value):
@@ -73,6 +74,7 @@ def parse_catalogue(xml):
             passes.append({
                 "id": pass_id,
                 "name": name,
+                **({"displayName": DISPLAY_NAMES[pass_id]} if pass_id in DISPLAY_NAMES else {}),
                 "latitude": lat,
                 "longitude": lon,
                 "elevation": elevation,

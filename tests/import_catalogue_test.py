@@ -22,6 +22,14 @@ def document(first_name="High", first_altitude="2100", duplicate=False):
 
 
 class ImportTests(unittest.TestCase):
+    def test_mortirolo_display_name_preserves_source_identity(self):
+        source_name = "Passo della Foppa/Pas de la Foppa (Passo del Mortirolo)"
+        xml = document(first_name=source_name).replace("10,46,0", "10.2985193,46.2479856,0")
+        result = importer.parse_catalogue(xml)
+        mortirolo = next(p for p in result["passes"] if p["name"] == source_name)
+        self.assertEqual(mortirolo["id"], "pass-965d3e148f028ea0")
+        self.assertEqual(mortirolo["displayName"], "Mortirolo")
+
     def test_only_selected_layers(self):
         result = importer.parse_catalogue(document())
         self.assertEqual(len(result["passes"]), 2)

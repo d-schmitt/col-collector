@@ -14,6 +14,9 @@ ascent journal. The same interface can also run in a local browser.
 - **Preloaded approaches for every pass:** choose from 1,340 source-backed options,
   without adding your own route. Riding any one collects the pass, without marking
   the other choices complete. Repeat ascents are separate records.
+- **Unsure which approach you rode?** Choose **Log ascent · approach unknown**.
+  The pass is collected without completing any named approach. You can select a
+  known approach later when editing, or change it back to unknown.
 - **An optional date, photo and note** for each ascent, with editing and deletion.
 - **Private local storage, backups and restoration**, with stale-write protection
   when several panels or sessions share the passport.
@@ -79,6 +82,10 @@ points. They remain distinct mapped passes; reference codes alone are not used
 as identifiers. IDs derive from the source name and coordinates, not list order.
 Renaming or moving a source entry changes its generated ID, so catalogue refreshes
 must be reviewed before replacing a version used by existing passports.
+Display-name overrides do not change source names or IDs: **Mortirolo** is shown
+as the primary name for Passo della Foppa, while the original source name and
+aliases remain visible in the detail view and searchable. The catalogue importer
+preserves this override.
 
 **Every one of the 437 passes has preloaded choices.** The approach catalogue
 contains 1,335 starting-point variants extracted from the map's factual start
@@ -127,13 +134,21 @@ route IDs, and assigns deterministic IDs to source-listed starts. An optional
 `verified-approaches.json` retains the separately verified metric-bearing routes.
 Review catalogue changes before publishing a refresh.
 
-**Existing passports:** startup migrates the local database to schema 2 and adds
+**Existing passports:** startup migrates the local database to schema 3 and adds
 the preloaded choices without changing ascent IDs, photos, completion, personal
 revision, or the GitHub sync baseline. Previously entered custom routes remain
 attached to historical ascents, which can still be edited and restored from
-backup. New ascents must use a preloaded choice; the manual-entry form and API
-are retired. Update the app on all devices before pulling records that use newly
-added catalogue IDs. Older app versions cannot open the schema-2 database.
+backup. New ascents use a preloaded choice or explicitly record an unknown
+approach; the manual route-entry form and API remain retired.
+
+Schema 3 stores the pass ID on every ascent and allows a null approach ID.
+Migration derives pass IDs for existing rides without changing their approach
+links. **Stop older running collector instances before opening the same passport
+with this version**, and update all devices before syncing. Older versions cannot
+open a schema-3 database or read the new version-2 JSON backups. Version-1 backups
+(including private-sync backups and recovery snapshots) can still be restored;
+their pass IDs are derived from their original approaches. The outer GitHub
+manifest remains version 1 and contains the versioned passport backup.
 
 ## Privacy, persistence and recovery
 
@@ -270,9 +285,11 @@ npm run test:browser
 Tests use disposable databases, never the default personal passport. Browser
 tests stub external map tiles and location results; they cover both viewport
 sizes, filtering, preloaded Klausenpass approaches, repeat ascents, optional dates, photo
-editing, backup/restore, deletion, and stale-write recovery.
+editing, backup/restore, deletion, stale-write recovery, and Mortirolo's
+unknown-approach flow through collection, map and detail views.
 Importer/storage tests require coverage of all 437 passes and preserve historical
-custom-route records through the schema migration.
+custom-route records through the schema migration. Unknown ascents are checked
+through editing, photo retention/removal, backup versions and private sync.
 Sync tests use a fake GitHub service for separate photos, multi-device round
 trips, private-only enforcement, push/pull conflicts, concurrent edits, retries
 after uncertain outcomes, and recovery. No test uploads synthetic rides to a

@@ -63,6 +63,25 @@ test("manual approach creation is retired and every pass is ready to log", async
   assert.equal(new Set(state.approaches.filter((a) => a.verified).map((a) => a.passId)).size, 437);
 });
 
+test("HTTP and canvas support unknown ascents and Mortirolo's source aliases", async (t) => {
+  const { runtime, server } = await fixture(t);
+  const response = await fetch(server.url + "api/ascents", {
+    method: "POST", headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ revision: 0, approachId: null, passId: "pass-965d3e148f028ea0" }),
+  });
+  assert.equal(response.status, 200);
+  const { state } = await response.json();
+  assert.equal(state.ascents[0].approachId, null);
+  assert.equal(state.ascents[0].passId, "pass-965d3e148f028ea0");
+  const canvas = collectorCanvas({ createCanvas: (options) => options, CanvasError: Error }, runtime);
+  assert.deepEqual(canvas.actions[0].handler(), { totalPasses: 437, completedPasses: 1, recordedAscents: 1 });
+  for (const query of ["Mortirolo", "Foppa"]) {
+    assert.deepEqual(canvas.actions[1].handler({ input: { query } }), [
+      { id: "pass-965d3e148f028ea0", name: "Mortirolo", elevation: 1855, completed: true },
+    ]);
+  }
+});
+
 test("geocoder validates coordinates, caches searches and throttles uncached requests", async (t) => {
   const { runtime } = await fixture(t);
   let calls = 0;

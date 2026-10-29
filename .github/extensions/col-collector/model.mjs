@@ -1,8 +1,15 @@
 export const GROUP_LABELS = { high: "Above 2,000 m", low: "Below 2,000 m" };
 
+export function displayName(pass) {
+  return pass.displayName || pass.name.split(/[/(]/)[0].trim();
+}
+
+export function ascentPassId(ascent, approaches) {
+  return ascent.passId ?? approaches.find((approach) => approach.id === ascent.approachId)?.passId;
+}
+
 export function completedPassIds(approaches, ascents) {
-  const ridden = new Set(ascents.map((ascent) => ascent.approachId));
-  return new Set(approaches.filter((approach) => ridden.has(approach.id)).map((approach) => approach.passId));
+  return new Set(ascents.map((ascent) => ascentPassId(ascent, approaches)).filter(Boolean));
 }
 
 export function filterPasses(passes, completed, { group = "all", status = "all", query = "" } = {}) {
@@ -10,7 +17,7 @@ export function filterPasses(passes, completed, { group = "all", status = "all",
   return passes.filter((pass) =>
     (group === "all" || pass.group === group) &&
     (status === "all" || completed.has(pass.id) === (status === "done")) &&
-    (!needle || normalize(pass.name).includes(needle)));
+    (!needle || normalize(pass.name).includes(needle) || normalize(displayName(pass)).includes(needle)));
 }
 
 export function normalize(value) {

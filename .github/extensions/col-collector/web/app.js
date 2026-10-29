@@ -1,9 +1,9 @@
-import { completedPassIds, filterPasses, GROUP_LABELS } from "./model.mjs";
+import { ascentPassId, completedPassIds, displayName, filterPasses, GROUP_LABELS } from "./model.mjs";
 
 const $ = (selector) => document.querySelector(selector);
 const esc = (value) => String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const number = (value) => value == null ? "Unknown" : new Intl.NumberFormat("en").format(value);
-const shortName = (pass) => pass.name.split(/[/(]/)[0].trim();
+const shortName = displayName;
 const photoUrl = (id) => `api/photo/${encodeURIComponent(id)}?revision=${state.revision}`;
 let catalogue, state, selectedId = null, view = "collection", map, markers, locationMarker;
 let draft = false, saving = false, searchSequence = 0, updateNoticeShown = false;
@@ -38,8 +38,7 @@ function doneIds() { return completedPassIds(state.approaches, state.ascents); }
 function filters() { return { group: $("#group-filter").value, status: $("#status-filter").value, query: $("#pass-search").value }; }
 function matching() { return filterPasses(catalogue.passes, doneIds(), filters()); }
 function passAscents(passId) {
-  const ids = new Set(state.approaches.filter((a) => a.passId === passId).map((a) => a.id));
-  return state.ascents.filter((a) => ids.has(a.approachId));
+  return state.ascents.filter((a) => ascentPassId(a, state.approaches) === passId);
 }
 function imageFor(pass) {
   const ascent = passAscents(pass.id).find((a) => a.hasPhoto);
@@ -176,7 +175,8 @@ function renderDetail() {
     <div class="detail-columns">
       <section aria-labelledby="approaches-title">
         <h2 id="approaches-title" class="section-heading">Choose your way up</h2>
-        <p class="section-intro">Choose a preloaded approach and log your ascent. Any one collects this pass. Some choices are different starting points on the same road, not separate sides.</p>
+        <p class="section-intro">Choose a preloaded approach, or log an ascent without one if you are unsure. Either collects this pass; only a known approach is marked complete. Some choices are different starting points on the same road, not separate sides.</p>
+        <button type="button" class="unknown-approach" data-log="">Log ascent · approach unknown</button>
         ${approaches.filter((a) => a.verified || ridden.has(a.id)).map((a) => `
           <article class="approach">
             <h3>${esc(a.name)} ${ridden.has(a.id) ? '<span aria-label="Completed">✓</span>' : ""}</h3>
@@ -195,11 +195,11 @@ function renderDetail() {
         ${ascents.length ? ascents.map((a) => `
           <article class="journal-entry">
             <p class="journal-date">${a.date ? esc(new Date(`${a.date}T12:00:00`).toLocaleDateString("en", { day: "numeric", month: "long", year: "numeric" })) : "Date not recorded"}</p>
-            <p class="approach-name">${esc(approaches.find((route) => route.id === a.approachId)?.name)}</p>
+            <p class="approach-name">${a.approachId === null ? "Approach unknown" : esc(approaches.find((route) => route.id === a.approachId)?.name)}</p>
             ${a.hasPhoto ? `<img class="journal-photo" src="${photoUrl(a.id)}" alt="Photo from your ascent" loading="lazy">` : ""}
             ${a.note ? `<p class="note">${esc(a.note)}</p>` : ""}
             <div class="journal-actions"><button type="button" data-edit="${esc(a.id)}">Edit</button><button type="button" class="quiet danger" data-delete="${esc(a.id)}">Delete</button></div>
-          </article>`).join("") : '<div class="journal-empty"><h3>This story is still yours to write.</h3><p>Log an ascent from one of the approaches. A date, a photo, a few words: add as much or as little as you remember.</p></div>'}
+          </article>`).join("") : '<div class="journal-empty"><h3>This story is still yours to write.</h3><p>Log an ascent, even if you do not remember the approach. A date, a photo, a few words: add as much or as little as you remember.</p></div>'}
       </section>
     </div>`;
   $("#back-button").onclick = run(backToCollection);
@@ -243,7 +243,7 @@ async function startAscent(approachId, existing) {
     <form id="ascent-form" class="ascent-form">
       <h3>${existing ? "Edit ascent" : "Record an ascent"}</h3>
       <fieldset class="form-stack">
-        <label>Approach<select name="approachId" required>${approaches.map((a) => `<option value="${esc(a.id)}" ${a.id === approachId ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select></label>
+        <label>Approach<select name="approachId"><option value="" ${!approachId ? "selected" : ""}>Approach unknown</option>${approaches.map((a) => `<option value="${esc(a.id)}" ${a.id === approachId ? "selected" : ""}>${esc(a.name)}</option>`).join("")}</select></label>
         <label>Date <small>Optional; leave empty if you do not remember</small><input type="date" name="date" value="${esc(existing?.date || "")}"></label>
         <label>A few words <small>Optional</small><textarea name="note" maxlength="4000" placeholder="The last switchback. The view. The cake afterwards.">${esc(existing?.note || "")}</textarea></label>
         <label>Photo <small>Optional · JPEG, PNG or WebP, up to 20 MB; resized to remove metadata</small><input name="photo" type="file" accept="image/jpeg,image/png,image/webp"></label>
@@ -264,7 +264,7 @@ async function startAscent(approachId, existing) {
     saving = true;
     try {
       const input = {
-        revision: state.revision, approachId: data.get("approachId"),
+        revision: state.revision, passId: selectedId, approachId: data.get("approachId") || null,
         date: data.get("date"), note: data.get("note"), ...(existing ? { id: existing.id } : {}),
       };
       const file = data.get("photo");

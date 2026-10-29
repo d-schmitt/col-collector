@@ -122,7 +122,8 @@ test("Klausenpass has preloaded approaches and can be logged without route entry
   await expect(page.getByRole("heading", { name: "From Linthal station" })).toBeVisible();
   await expect(page.getByRole("heading", { name: "From Schattdorf" })).toBeVisible();
   await page.getByRole("button", { name: "Log ascent", exact: true }).first().click();
-  await expect(page.locator('select[name="approachId"] option')).toHaveCount(3);
+  await expect(page.locator('select[name="approachId"] option')).toHaveCount(4);
+  await expect(page.locator('select[name="approachId"]')).not.toHaveValue("");
   await page.getByRole("button", { name: "Save ascent", exact: true }).click();
   await expect(page.getByText("Date not recorded", { exact: true })).toBeVisible();
   await expect(page.locator(".status-pill")).toHaveText("✓ Collected");
@@ -140,6 +141,66 @@ test("stale writes show a recoverable error without losing the draft", async ({ 
   await page.getByRole("button", { name: "Reload records", exact: true }).click();
   await page.getByRole("button", { name: "Save ascent", exact: true }).click();
   await expect(page.locator(".note")).toHaveText("Keep this draft");
+});
+
+test("Mortirolo can be collected with an unknown approach from the shared map detail flow", async ({ page }) => {
+  await page.getByLabel("Filter passes by name").fill("Foppa");
+  await expect(page.locator(".pass-card h3")).toHaveText("Mortirolo");
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await page.getByRole("button", { name: "Show all matching passes" }).click();
+  const marker = page.locator(".leaflet-overlay-pane path");
+  await expect(marker).toHaveCount(1);
+  await marker.hover();
+  await expect(page.locator(".leaflet-tooltip")).toContainText("Mortirolo");
+  await marker.click();
+  await expect(page.locator("#detail-title")).toHaveText("Mortirolo");
+  await expect(page.locator(".full-name")).toContainText("Passo della Foppa");
+  await page.getByRole("button", { name: "Log ascent · approach unknown", exact: true }).click();
+  await expect(page.getByRole("combobox", { name: "Approach", exact: true })).toHaveValue("");
+  await page.getByRole("button", { name: "Save ascent", exact: true }).click();
+  await expect(page.locator(".status-pill")).toHaveText("✓ Collected");
+  await expect(page.locator(".journal-entry .approach-name")).toHaveText("Approach unknown");
+  await expect(page.locator('.approach [aria-label="Completed"]')).toHaveCount(0);
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  const knownId = await page.locator('select[name="approachId"] option').nth(1).getAttribute("value");
+  await page.getByRole("combobox", { name: "Approach", exact: true }).selectOption(knownId);
+  await page.getByRole("button", { name: "Save ascent", exact: true }).click();
+  await expect(page.locator('.approach [aria-label="Completed"]')).toHaveCount(1);
+  await page.getByRole("button", { name: "Edit", exact: true }).click();
+  await page.getByRole("combobox", { name: "Approach", exact: true }).selectOption("");
+  await page.getByLabel("A few words", { exact: false }).fill("Not sure which side");
+  await page.getByRole("button", { name: "Save ascent", exact: true }).click();
+  await expect(page.locator('.approach [aria-label="Completed"]')).toHaveCount(0);
+  await page.getByRole("button", { name: "Log ascent · approach unknown", exact: true }).click();
+  await page.getByRole("button", { name: "Save ascent", exact: true }).click();
+  await expect(page.locator(".journal-entry")).toHaveCount(2);
+  await page.screenshot({ path: "test-results/mortirolo-desktop.png", fullPage: true });
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+  await page.screenshot({ path: "test-results/mortirolo-mobile.png", fullPage: true });
+  await page.getByText("Passport tools", { exact: true }).click();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download backup" }).click();
+  const backupPath = await (await download).path();
+  await page.reload();
+  await expect(page.locator("#progress-label")).toHaveText("1 / 437 collected");
+  await page.getByLabel("Filter passes by name").fill("Mortirolo");
+  await page.locator(".pass-card").click();
+  await expect(page.locator(".journal-entry")).toHaveCount(2);
+  await expect(page.locator(".note")).toHaveText("Not sure which side");
+  for (let i = 0; i < 2; i++) {
+    await page.getByRole("button", { name: "Delete", exact: true }).first().click();
+    await page.getByRole("button", { name: "Delete ascent", exact: true }).click();
+  }
+  await expect(page.locator(".status-pill")).toHaveText("Still to ride");
+  await page.getByText("Passport tools", { exact: true }).click();
+  await page.locator("#restore-file").setInputFiles(backupPath);
+  await page.getByRole("button", { name: "Replace passport", exact: true }).click();
+  await expect(page.locator(".journal-entry")).toHaveCount(2);
+  await expect(page.locator(".status-pill")).toHaveText("✓ Collected");
+  await expect(page.locator('.approach [aria-label="Completed"]')).toHaveCount(0);
+  await page.getByRole("button", { name: "Show on map" }).click();
+  await expect(page.locator('.leaflet-overlay-pane path[fill="#b51b78"]')).toHaveCount(1);
 });
 
 test("manual GitHub sync protects local changes and offers recovery", async ({ page }) => {
