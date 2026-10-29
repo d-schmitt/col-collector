@@ -5,3 +5,20 @@ playwright-report/
 .github/extensions/col-collector/web/vendor/
 *.tmp
 __pycache__/
+
+# Personal passports, GitHub data-repository exports, and credentials are not source.
+*.sqlite
+*.sqlite-*
+*.sqlite3
+*.sqlite3-*
+*.db
+*.db-*
+passport.json
+col-collector-backup.json
+col-collector-before-pull.json
+col-collector-????-??-??.json
+photos/
+artifacts/
+.env
+.env.*
+!.env.example

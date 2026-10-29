@@ -1,11 +1,9 @@
 import { readFile } from "node:fs/promises";
-import { isAbsolute } from "node:path";
 import { Store, defaultDataPath } from "./store.mjs";
 import { createGeocoder, startServer } from "./server.mjs";
 import { GitHubSync } from "./github-sync.mjs";
 
 export async function createRuntime({ dataPath = process.env.COL_COLLECTOR_DATA_PATH || defaultDataPath(), syncRequest } = {}) {
-  if (!isAbsolute(dataPath)) throw new Error("COL_COLLECTOR_DATA_PATH must be an absolute path outside the repository.");
   const catalogue = JSON.parse(await readFile(new URL("./data/catalogue.json", import.meta.url), "utf8"));
   const approaches = JSON.parse(await readFile(new URL("./data/approaches.json", import.meta.url), "utf8"));
   catalogue.approachSources = JSON.parse(await readFile(new URL("./data/approach-sources.json", import.meta.url), "utf8"));

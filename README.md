@@ -144,9 +144,16 @@ $COPILOT_HOME/extensions/col-collector/artifacts/passport.sqlite
 ```
 
 `COPILOT_HOME` defaults to `~/.copilot`. Records and photos are **never written
-into the application source repository**. The parent directory is created privately and the database
-file is owner-readable/writable. SQLite transactions and revision checks prevent
-partial restores and silent concurrent overwrites. This is local storage, not
+into the application source repository**. Database-path overrides are rejected
+if they point inside a Git repository, including worktrees and symbolic-link
+targets. Common private
+database, backup, photo-directory and environment-file names are also ignored by
+Git as a second safeguard. Do not force-add private files or save downloaded
+backups under other names in the source checkout.
+
+The parent directory is created privately. The database and its SQLite sidecar
+files are owner-readable/writable. SQLite transactions and revision checks
+prevent partial restores and silent concurrent overwrites. This is local storage, not
 encryption; someone with access to your operating-system account can read it.
 
 - Use **Passport tools → Download backup** for a JSON archive, including photos.

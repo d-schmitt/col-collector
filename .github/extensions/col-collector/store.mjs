@@ -1,6 +1,6 @@
 import { DatabaseSync } from "node:sqlite";
-import { mkdir, chmod } from "node:fs/promises";
-import { dirname, join } from "node:path";
+import { mkdir, chmod, lstat, realpath, readlink, open as openFile } from "node:fs/promises";
+import { basename, dirname, isAbsolute, join, resolve } from "node:path";
 import { homedir } from "node:os";
 import { randomUUID } from "node:crypto";
 import { InputError, text, validateDate, validateSourceUrl } from "./model.mjs";
@@ -8,6 +8,39 @@ import { InputError, text, validateDate, validateSourceUrl } from "./model.mjs";
 export function defaultDataPath() {
   return join(process.env.COPILOT_HOME || join(homedir(), ".copilot"),
     "extensions", "col-collector", "artifacts", "passport.sqlite");
+}
+
+async function resolveStoragePath(path, depth = 0) {
+  if (depth > 40) throw new Error("The passport storage path contains too many symbolic links.");
+  try { return await realpath(path); }
+  catch (error) { if (error.code !== "ENOENT") throw error; }
+  // Resolve dangling links too: their future target must not land in a checkout.
+  try {
+    if ((await lstat(path)).isSymbolicLink()) {
+      return resolveStoragePath(resolve(dirname(path), await readlink(path)), depth + 1);
+    }
+  } catch (error) { if (error.code !== "ENOENT") throw error; }
+  const parent = dirname(path);
+  if (parent === path) throw new Error("The passport storage location could not be resolved.");
+  return join(await resolveStoragePath(parent, depth + 1), basename(path));
+}
+
+export async function privateStoragePath(path) {
+  if (!isAbsolute(path)) throw new Error("COL_COLLECTOR_DATA_PATH must be an absolute path outside Git repositories.");
+  const canonical = await resolveStoragePath(path);
+  for (const candidate of new Set([resolve(path), canonical])) {
+    let directory = dirname(candidate);
+    while (true) {
+      let marker;
+      try { marker = await lstat(join(directory, ".git")); }
+      catch (error) { if (error.code !== "ENOENT") throw error; }
+      if (marker) throw new Error("Private passport storage cannot be inside a Git repository. Choose a different COL_COLLECTOR_DATA_PATH.");
+      const parent = dirname(directory);
+      if (parent === directory) break;
+      directory = parent;
+    }
+  }
+  return canonical;
 }
 
 export function decodePhoto(value) {
@@ -32,9 +65,18 @@ function id(value) { return text(value, "Identifier", 100, true); }
 
 export class Store {
   static async open(path, catalogue, verifiedApproaches = []) {
+    path = await privateStoragePath(path);
     await mkdir(dirname(path), { recursive: true, mode: 0o700 });
-    const store = new Store(path, catalogue, verifiedApproaches);
+    const file = await openFile(path, "a", 0o600);
+    await file.close();
     await chmod(path, 0o600);
+    const store = new Store(path, catalogue, verifiedApproaches);
+    try {
+      for (const suffix of ["-wal", "-shm"]) {
+        try { await chmod(path + suffix, 0o600); }
+        catch (error) { if (error.code !== "ENOENT") throw error; }
+      }
+    } catch (error) { store.close(); throw error; }
     return store;
   }
 
