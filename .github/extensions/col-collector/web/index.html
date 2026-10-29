@@ -26,10 +26,11 @@
     <details class="tools">
       <summary>Passport tools</summary>
       <div class="tools-menu">
+        <button id="github-sync-button" type="button">GitHub sync</button>
         <button id="backup-button" type="button">Download backup</button>
         <label class="file-button" for="restore-file">Restore backup</label>
         <input id="restore-file" type="file" accept=".json,application/json" hidden>
-        <p>Records and photos stay on this device. Backups include your photos.</p>
+        <p>Records stay on this device unless you manually push them to your private repository. Backups include photos.</p>
         <p><a href="https://www.google.com/maps/d/viewer?mid=1GPHWvjnIKIObSl2m5ykGzmm-BJd5aXWU" target="_blank" rel="noopener noreferrer">Original pass map ↗</a></p>
       </div>
     </details>
@@ -42,6 +43,29 @@
   </div>
   <main id="main">
     <div id="loading" class="loading" role="status">Opening your Alpine passport…</div>
+    <section id="sync-panel" class="sync-panel" aria-labelledby="sync-title" hidden>
+      <div class="journal-heading"><h2 id="sync-title" tabindex="-1">Private GitHub backup</h2><button id="close-sync" class="quiet" type="button">Close</button></div>
+      <p class="section-intro">Manually sync your passport and photos to a separate private repository. GitHub CLI handles authentication; no token is saved in your backup.</p>
+      <form id="sync-connect-form" class="form-stack">
+        <label for="sync-repository">Private data repository</label>
+        <div class="input-action"><input id="sync-repository" required maxlength="200" placeholder="your-name/col-collector-data" autocapitalize="off" spellcheck="false"><button type="submit">Connect</button></div>
+      </form>
+      <p id="sync-status" class="sync-status" role="status">Loading sync settings…</p>
+      <div class="form-actions">
+        <button id="sync-push" class="primary" type="button" disabled>Push backup</button>
+        <button id="sync-pull" type="button" disabled>Pull backup</button>
+        <button id="sync-refresh" class="quiet" type="button">Refresh status</button>
+      </div>
+      <details class="sync-recovery">
+        <summary>Conflicts and recovery</summary>
+        <p>Push never overwrites an unseen remote backup. Pull stops if you have unpushed changes. To deliberately take the remote copy, download your current backup first, then replace local records below.</p>
+        <div class="form-actions">
+          <button id="sync-replace" class="danger" type="button" disabled>Replace local from GitHub</button>
+          <button id="sync-download-recovery" type="button" disabled>Download pre-pull recovery</button>
+        </div>
+      </details>
+      <p class="section-footnote">Repository privacy is checked before every transfer. GitHub history keeps earlier photos and notes even after deletion in the app. A private repository is access-controlled, not end-to-end encrypted.</p>
+    </section>
     <section id="explorer" hidden aria-label="Pass explorer">
       <div class="collection-heading">
         <div><h1>Your Alpine collection</h1><p>A road, a summit, a story. Which pass is next?</p></div>
@@ -106,6 +130,6 @@
       <button value="confirm" class="primary" id="confirmation-accept">Continue</button>
     </form>
   </dialog>
-  <footer class="app-footer"><span>Made for the long way up.</span><span>Private on this device · No account required</span></footer>
+  <footer class="app-footer"><span>Made for the long way up.</span><span>Local-first · Optional private GitHub backup</span></footer>
 </body>
 </html>

@@ -8,6 +8,7 @@ const photoUrl = (id) => `api/photo/${encodeURIComponent(id)}?revision=${state.r
 let catalogue, state, selectedId = null, view = "collection", map, markers, locationMarker;
 let draft = false, saving = false, searchSequence = 0, updateNoticeShown = false;
 let noticeTimer;
+let syncBusy = false;
 
 async function api(path, body) {
   const response = await fetch(`api/${path}`, body === undefined ? {} : {
@@ -417,15 +418,80 @@ $("#detail").onclick = run(async (event) => {
     } finally { saving = false; remove.disabled = false; }
   }
 });
-$("#backup-button").onclick = run(async () => {
-  const backup = await api("backup");
+function downloadBackup(backup, filename) {
   const url = URL.createObjectURL(new Blob([JSON.stringify(backup, null, 2)], { type: "application/json" }));
   const anchor = document.createElement("a");
   anchor.href = url;
-  anchor.download = `col-collector-${new Date().toISOString().slice(0, 10)}.json`;
+  anchor.download = filename;
   anchor.click();
   setTimeout(() => URL.revokeObjectURL(url), 10000);
+}
+$("#backup-button").onclick = run(async () => {
+  const backup = await api("backup");
+  downloadBackup(backup, `col-collector-${new Date().toISOString().slice(0, 10)}.json`);
   notice("Backup downloaded. It contains your private notes and photos; keep it somewhere safe.");
+});
+function renderSync(status) {
+  $("#sync-repository").value = status.repository || "";
+  $("#sync-status").textContent = !status.configured
+    ? "Not connected. Enter a separate private repository initialized with a README."
+    : `${status.repository} · ${status.branch} · ${status.localChanged ? "Unpushed local changes" : status.baseSha ? "Local copy matches the last sync" : "No backup synced yet"}${status.lastSyncAt ? ` · Last synced ${new Date(status.lastSyncAt).toLocaleString()}` : ""}. Remote changes are checked when you push or pull.`;
+  for (const selector of ["#sync-push", "#sync-pull", "#sync-replace"]) $(selector).disabled = syncBusy || !status.configured;
+  $("#sync-download-recovery").disabled = syncBusy || !status.hasRecovery;
+  $("#sync-connect-form button").disabled = syncBusy;
+  $("#sync-repository").disabled = syncBusy;
+  $("#sync-refresh").disabled = syncBusy;
+}
+$("#github-sync-button").onclick = run(async () => {
+  $("#sync-panel").hidden = false;
+  $(".tools").open = false;
+  renderSync(await api("sync/status"));
+  $("#sync-title").focus();
+});
+$("#close-sync").onclick = () => { $("#sync-panel").hidden = true; };
+$("#sync-refresh").onclick = run(async () => renderSync(await api("sync/status")));
+async function syncOperation(path, input, pendingMessage) {
+  if (syncBusy || saving) return;
+  syncBusy = true;
+  saving = true;
+  for (const element of $("#sync-panel").querySelectorAll("button, input")) element.disabled = true;
+  $("#sync-status").textContent = pendingMessage;
+  try {
+    const result = await api(`sync/${path}`, input);
+    if (path === "pull") draft = false;
+    if (!draft) {
+      state = result.state;
+      if (selectedId) renderDetail();
+      else { renderCards(); renderMarkers(); }
+    }
+    notice(result.message || "Private repository connected. Nothing is uploaded until you push.");
+  } finally {
+    syncBusy = false;
+    saving = false;
+    $("#close-sync").disabled = false;
+    // Keep settings usable even when GitHub is offline; status is read locally.
+    renderSync(await api("sync/status"));
+  }
+}
+$("#sync-connect-form").onsubmit = run(async (event) => {
+  event.preventDefault();
+  await syncOperation("connect", { repository: $("#sync-repository").value.trim() }, "Checking repository privacy and access…");
+});
+$("#sync-push").onclick = run(async () => {
+  await syncOperation("push", { revision: state.revision }, "Checking GitHub, then uploading the saved passport and photos…");
+});
+async function pullBackup(replaceLocal) {
+  if (!await allowLeave()) return;
+  const message = replaceLocal
+    ? "Replace this device's passport with GitHub's backup, including any unpushed local changes? Download a backup first. A pre-pull recovery copy will also be kept on this device."
+    : "Pull the private repository's passport onto this device? Unpushed local changes will block the pull. A pre-pull recovery copy will be kept.";
+  if (!await confirmChange(message, replaceLocal ? "Replace local passport" : "Pull backup")) return;
+  await syncOperation("pull", { revision: state.revision, replaceLocal }, "Downloading and validating the private backup…");
+}
+$("#sync-pull").onclick = run(() => pullBackup(false));
+$("#sync-replace").onclick = run(() => pullBackup(true));
+$("#sync-download-recovery").onclick = run(async () => {
+  downloadBackup(await api("sync/recovery"), "col-collector-before-pull.json");
 });
 $("#restore-file").onchange = run(async (event) => {
   const file = event.target.files[0];

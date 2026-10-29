@@ -16,6 +16,8 @@ ascent journal. The same interface can also run in a local browser.
 - **An optional date, photo and note** for each ascent, with editing and deletion.
 - **Private local storage, backups and restoration**, with stale-write protection
   when several panels or sessions share the passport.
+- **Optional manual GitHub sync** to a separate private repository, with photos
+  stored as binary files and conflicts blocked instead of silently overwritten.
 
 ## Run locally
 
@@ -30,7 +32,8 @@ npm start
 Open the loopback URL printed by the server. It includes a randomly generated
 access token; do not share that URL. The process binds only to `127.0.0.1`.
 Use Ctrl+C to stop the standalone server. No build step or external account is
-required. `npm ci` copies Leaflet's assets and license into the extension's
+required for local use. GitHub sync additionally needs the authenticated `gh`
+CLI on the extension process's PATH. `npm ci` copies Leaflet's assets and license into the extension's
 ignored `web/vendor/` directory.
 
 ## Open in Copilot
@@ -106,7 +109,7 @@ $COPILOT_HOME/extensions/col-collector/artifacts/passport.sqlite
 ```
 
 `COPILOT_HOME` defaults to `~/.copilot`. Records and photos are **never written
-into the repository**. The parent directory is created privately and the database
+into the application source repository**. The parent directory is created privately and the database
 file is owner-readable/writable. SQLite transactions and revision checks prevent
 partial restores and silent concurrent overwrites. This is local storage, not
 encryption; someone with access to your operating-system account can read it.
@@ -124,8 +127,9 @@ encryption; someone with access to your operating-system account can read it.
 - Optional dates are kept as calendar dates; leaving one blank does not invent a
   ride date.
 
-No analytics, login, cloud sync, Strava/Garmin connection, or location permission
-is used. Online requests are limited to:
+No analytics, app login, automatic sync, Strava/Garmin connection, or location
+permission is used. Apart from explicitly requested private GitHub synchronization
+(below), online requests are limited to:
 
 | Service | What is sent | Usage |
 |---|---|---|
@@ -137,6 +141,67 @@ use. Location search or maps can fail independently without losing saved rides.
 The collection and journal remain usable offline while the local server runs.
 Verify road conditions, seasonal closures, surfaces and cycling restrictions
 before riding; this app is not a navigation or road-safety service.
+
+## Private GitHub synchronization
+
+Sync is **manual**, not a background upload. The app remains usable without it.
+Use **Passport tools → GitHub sync** to connect a separate repository in
+`owner/name` form. Create that repository as **private**, initialized with a
+README, and sign in to its GitHub account using `gh auth login` on this machine.
+Only github.com repositories are currently supported.
+
+The connection is stored in the private SQLite database, not in the application
+source or exported passport. No repository is preconfigured for other users.
+Credentials stay in the GitHub CLI credential store; the app never returns a
+token to the browser or writes it into a backup.
+
+- **Push backup** uploads the saved passport and photos, then atomically advances
+  the data branch without force-pushing. Unsaved form drafts are not uploaded.
+- **Pull backup** downloads and validates the remote snapshot and replaces the
+  local saved passport only if there are no unpushed local changes. A fresh,
+  empty device can connect and pull directly.
+- If GitHub has changed since your last successful sync, push stops. If the
+  local passport has changed, pull stops. There is no automatic record merge.
+- To deliberately keep the remote version, first download your current local
+  backup, then choose **Conflicts and recovery → Replace local from GitHub**.
+  The local revision is checked again after download; edits made during the
+  transfer prevent replacement even when that option was selected.
+- Every successful pull that replaces records atomically saves the previous
+  local passport as a **pre-pull recovery backup**, including its photos.
+  Download it from the same panel and use the normal Restore backup control to
+  recover it. The next replacing pull supersedes this recovery copy; an
+  already-up-to-date pull leaves it untouched.
+- If you prefer your local copy after a conflict, download it first, pull the
+  remote copy, restore your downloaded local backup, and explicitly push. This
+  intentionally replaces the remote snapshot while still checking for newer
+  remote commits.
+
+The private data repository contains:
+
+```text
+passport.json                 # Versioned passport manifest, with photo references
+photos/<sha256>.jpg            # Deduplicated photo bytes (or .png / .webp)
+```
+
+Photo hashes and Git blob hashes are checked before restoring. The existing
+README and unrelated repository files are preserved. Sync shares the local
+backup's 60 MB / 10,000 record limits. The JSON manifest is a sync format rather
+than a directly restorable standalone backup; use Pull backup to retrieve it
+with its photos.
+
+Privacy, repository identity and access are verified before transfers.
+Public/internal repositories and the application's source repository are
+rejected. Concurrent sync operations share a short-lived database lease; a
+crashed operation can be retried after the lease expires. A retry reconciles an
+already-successful push rather than creating duplicate commits.
+
+**Privacy limits:** a private GitHub repository is access-controlled, not
+end-to-end encrypted. Anyone you grant access can read the notes and photos.
+Do not make the repository public: app checks cannot revoke data already stored
+on GitHub or prevent an owner from changing visibility after a check. Git history
+retains old photos and notes even after deletion in the app; removing them from
+all history requires separate repository-history cleanup. Ordinary sync never
+rewrites history.
 
 Environment overrides:
 
@@ -164,3 +229,7 @@ Tests use disposable databases, never the default personal passport. Browser
 tests stub external map tiles and location results; they cover both viewport
 sizes, filtering, custom approaches, repeat ascents, optional dates, photo
 editing, backup/restore, deletion, and stale-write recovery.
+Sync tests use a fake GitHub service for separate photos, multi-device round
+trips, private-only enforcement, push/pull conflicts, concurrent edits, retries
+after uncertain outcomes, and recovery. No test uploads synthetic rides to a
+real repository.

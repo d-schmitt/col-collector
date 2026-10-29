@@ -61,6 +61,7 @@ export class Store {
         created_at TEXT NOT NULL
       );
       CREATE TABLE IF NOT EXISTS geocache (query TEXT PRIMARY KEY, response TEXT NOT NULL, saved_at INTEGER NOT NULL);
+      CREATE TABLE IF NOT EXISTS sync_lock (id INTEGER PRIMARY KEY CHECK(id=1), token TEXT NOT NULL, expires_at INTEGER NOT NULL);
     `);
     if (this.db.prepare("SELECT value FROM metadata WHERE key='schemaVersion'").get().value !== "1") {
       this.db.close();
@@ -170,21 +171,29 @@ export class Store {
   }
 
   export() {
+    return this.exportSnapshot().backup;
+  }
+
+  backupData() {
+    return {
+      format: "col-collector-passport", version: 1, exportedAt: new Date().toISOString(),
+      approaches: this.db.prepare(`SELECT id, pass_id AS passId, name, source_url AS sourceUrl
+        FROM approaches WHERE verified=0 ORDER BY id`).all(),
+      ascents: this.db.prepare("SELECT * FROM ascents ORDER BY id").all().map((row) => ({
+        id: row.id, approachId: row.approach_id, date: row.date, note: row.note, createdAt: row.created_at,
+        photo: row.photo ? `data:${row.mime};base64,${Buffer.from(row.photo).toString("base64")}` : null,
+      })),
+    };
+  }
+
+  exportSnapshot() {
     this.db.exec("BEGIN");
     try {
-      return {
-        format: "col-collector-passport", version: 1, exportedAt: new Date().toISOString(),
-        approaches: this.db.prepare(`SELECT id, pass_id AS passId, name, source_url AS sourceUrl
-          FROM approaches WHERE verified=0`).all(),
-        ascents: this.db.prepare("SELECT * FROM ascents").all().map((row) => ({
-          id: row.id, approachId: row.approach_id, date: row.date, note: row.note, createdAt: row.created_at,
-          photo: row.photo ? `data:${row.mime};base64,${Buffer.from(row.photo).toString("base64")}` : null,
-        })),
-      };
+      return { revision: this.revision(), backup: this.backupData() };
     } finally { this.db.exec("COMMIT"); }
   }
 
-  restore(input) {
+  restore(input, syncConfig) {
     const data = input.backup;
     if (!data || data.format !== "col-collector-passport" || data.version !== 1 ||
         !Array.isArray(data.approaches) || !Array.isArray(data.ascents) ||
@@ -192,6 +201,7 @@ export class Store {
       throw new InputError("This is not a supported Col Collector backup.");
     }
     return this.mutate(input.revision, () => {
+      if (syncConfig) this.setMetadata("syncRecovery", this.backupData());
       this.db.exec("DELETE FROM ascents; DELETE FROM approaches WHERE verified=0;");
       const approachIds = new Set(this.verifiedApproaches.map((a) => a.id));
       const names = new Set(this.verifiedApproaches.map((a) => `${a.passId}|${a.name.toLocaleLowerCase()}`));
@@ -220,8 +230,42 @@ export class Store {
           .run(ascentId, a.approachId, validateDate(a.date), text(a.note, "Note", 4000),
             photo?.bytes ?? null, photo?.mime ?? null, new Date(a.createdAt).toISOString());
       }
+      if (syncConfig) this.setMetadata("githubSync", { ...syncConfig, syncedRevision: input.revision + 1 });
       return { restored: data.ascents.length };
     });
+  }
+
+  getMetadata(key) {
+    const row = this.db.prepare("SELECT value FROM metadata WHERE key=?").get(key);
+    return row ? JSON.parse(row.value) : null;
+  }
+
+  setMetadata(key, value) {
+    this.db.prepare("INSERT OR REPLACE INTO metadata VALUES (?, ?)").run(key, JSON.stringify(value));
+  }
+
+  hasRecovery() {
+    return !!this.db.prepare("SELECT 1 FROM metadata WHERE key='syncRecovery'").get();
+  }
+
+  hasPersonalRecords() {
+    return !!this.db.prepare("SELECT 1 FROM ascents UNION ALL SELECT 1 FROM approaches WHERE verified=0 LIMIT 1").get();
+  }
+
+  acquireSyncLease() {
+    const token = randomUUID();
+    const result = this.db.prepare(`INSERT INTO sync_lock VALUES (1, ?, ?)
+      ON CONFLICT(id) DO UPDATE SET token=excluded.token, expires_at=excluded.expires_at
+      WHERE sync_lock.expires_at < ?`).run(token, Date.now() + 120000, Date.now());
+    if (!result.changes) throw new InputError("Another panel is already syncing this passport. Wait for it to finish.", 409);
+    return {
+      renew: () => {
+        const renewed = this.db.prepare("UPDATE sync_lock SET expires_at=? WHERE id=1 AND token=? AND expires_at>=?")
+          .run(Date.now() + 120000, token, Date.now());
+        if (!renewed.changes) throw new InputError("The sync lock expired. Retry the operation; no force overwrite is performed.", 409);
+      },
+      release: () => { this.db.prepare("DELETE FROM sync_lock WHERE token=?").run(token); },
+    };
   }
 
   cachedSearch(query) {

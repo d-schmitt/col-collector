@@ -64,7 +64,7 @@ export function createGeocoder(store, { endpoint = process.env.COL_COLLECTOR_GEO
   };
 }
 
-export async function startServer({ store, catalogue, geocode = createGeocoder(store), port = 0, onError = console.error }) {
+export async function startServer({ store, catalogue, geocode = createGeocoder(store), sync, port = 0, onError = console.error }) {
   const token = randomBytes(24).toString("hex");
   const prefix = `/${token}/`;
   let origin;
@@ -89,6 +89,13 @@ export async function startServer({ store, catalogue, geocode = createGeocoder(s
       const path = url.pathname.slice(prefix.length);
       if (request.method === "GET") {
         if (path === "api/state") return json(store.state());
+        if (path === "api/sync/status") return json(sync.status());
+        if (path === "api/sync/recovery") {
+          const recovery = store.getMetadata("syncRecovery");
+          if (!recovery) throw new InputError("There is no pre-pull recovery backup yet.", 404);
+          response.setHeader("Content-Disposition", 'attachment; filename="col-collector-before-pull.json"');
+          return json(recovery);
+        }
         if (path === "api/catalogue") return json(catalogue);
         if (path === "api/search") return json(await geocode(url.searchParams.get("q") || ""));
         if (path === "api/backup") {
@@ -130,6 +137,9 @@ export async function startServer({ store, catalogue, geocode = createGeocoder(s
       else if (path === "api/ascents") result = store.saveAscent(input);
       else if (path === "api/ascents/delete") result = store.deleteAscent(input);
       else if (path === "api/restore") result = store.restore(input);
+      else if (path === "api/sync/connect") result = { sync: await sync.connect(input.repository) };
+      else if (path === "api/sync/push") result = await sync.push(input.revision);
+      else if (path === "api/sync/pull") result = await sync.pull(input.revision, input.replaceLocal ?? false);
       else throw new InputError("Not found.", 404);
       json({ ...result, state: store.state() });
     } catch (error) {

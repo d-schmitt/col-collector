@@ -3,6 +3,7 @@ import { mkdtemp, rm } from "node:fs/promises";
 import { join } from "node:path";
 import { tmpdir } from "node:os";
 import { createRuntime } from "../../.github/extensions/col-collector/runtime.mjs";
+import { FakeGitHub } from "../fake-github.mjs";
 
 let runtime, dir, url;
 test.beforeEach(async ({ page }) => {
@@ -135,4 +136,48 @@ test("stale writes show a recoverable error without losing the draft", async ({ 
   await page.getByRole("button", { name: "Reload records", exact: true }).click();
   await page.getByRole("button", { name: "Save ascent", exact: true }).click();
   await expect(page.locator(".note")).toHaveText("Keep this draft");
+});
+
+test("manual GitHub sync protects local changes and offers recovery", async ({ page }) => {
+  const github = new FakeGitHub();
+  runtime.sync.request = github.request;
+  await page.getByText("Passport tools", { exact: true }).click();
+  await page.getByRole("button", { name: "GitHub sync", exact: true }).click();
+  await page.getByLabel("Private data repository").fill(github.repo.full_name);
+  await page.getByRole("button", { name: "Connect", exact: true }).click();
+  await expect(page.locator("#sync-status")).toContainText(github.repo.full_name);
+  await page.getByRole("button", { name: "Push backup", exact: true }).click();
+  await expect(page.locator("#sync-status")).toContainText("Local copy matches");
+  runtime.store.saveAscent({ revision: runtime.store.revision(), approachId: "stelvio-prad", note: "Keep locally" });
+  await page.reload();
+  await expect(page.locator("#progress-label")).toHaveText("1 / 437 collected");
+  await page.getByText("Passport tools", { exact: true }).click();
+  await page.getByRole("button", { name: "GitHub sync", exact: true }).click();
+  await page.getByRole("button", { name: "Pull backup", exact: true }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Pull backup", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("unpushed local changes");
+  await expect(page.locator("#progress-label")).toHaveText("1 / 437 collected");
+  await page.getByText("Conflicts and recovery", { exact: true }).click();
+  await page.getByRole("button", { name: "Replace local from GitHub", exact: true }).click();
+  await page.getByRole("button", { name: "Replace local passport", exact: true }).click();
+  await expect(page.locator("#progress-label")).toHaveText("0 / 437 collected");
+  await expect(page.getByRole("button", { name: "Download pre-pull recovery" })).toBeEnabled();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Download pre-pull recovery" }).click();
+  expect((await download).suggestedFilename()).toBe("col-collector-before-pull.json");
+  await page.setViewportSize({ width: 390, height: 844 });
+  await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= innerWidth)).toBe(true);
+});
+
+test("connecting a public repository fails without enabling sync", async ({ page }) => {
+  const github = new FakeGitHub();
+  github.repo.private = false;
+  github.repo.visibility = "public";
+  runtime.sync.request = github.request;
+  await page.getByText("Passport tools", { exact: true }).click();
+  await page.getByRole("button", { name: "GitHub sync", exact: true }).click();
+  await page.getByLabel("Private data repository").fill(github.repo.full_name);
+  await page.getByRole("button", { name: "Connect", exact: true }).click();
+  await expect(page.getByRole("alert")).toContainText("must be private");
+  await expect(page.getByRole("button", { name: "Push backup", exact: true })).toBeDisabled();
 });

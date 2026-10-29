@@ -151,6 +151,13 @@ fieldset { margin: 0; padding: 0; border: 0; min-width: 0; }
 .check-label { display: flex; align-items: center; gap: 8px; }
 .photo-preview { width: 100%; max-height: 180px; object-fit: contain; margin-top: 8px; }
 .section-footnote { margin-top: 20px; font-size: .78rem; color: var(--muted); }
+.sync-panel { padding: 22px; border: 1px solid var(--line); border-radius: 8px; margin-bottom: 30px; }
+.sync-panel .section-intro { margin: 12px 0 0; }
+.sync-panel .form-stack { gap: 2px; max-width: 650px; }
+.sync-status { margin: 14px 0; font-size: .86rem; overflow-wrap: anywhere; }
+.sync-recovery { margin-top: 22px; }
+.sync-recovery summary { cursor: pointer; font-size: .86rem; font-weight: 600; }
+.sync-recovery p { margin: 12px 0; max-width: 70ch; font-size: .86rem; color: var(--muted); }
 dialog { max-width: min(440px, calc(100vw - 36px)); padding: 26px; border: 1px solid var(--line); border-radius: 9px; color: var(--ink); background: var(--paper); box-shadow: 0 16px 50px #102e3030; }
 dialog::backdrop { background: #10251c70; }
 dialog p { margin: 14px 0 24px; }

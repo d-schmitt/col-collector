@@ -38,6 +38,10 @@ ascents. Deleting the final ascent reverses completion.
   JavaScript dialogs that may be blocked inside an iframe.
 - Failed saves retain the draft. Conflicting writes require an explicit reload
   before retrying. Loading, empty, network-error and success states are visible.
+- Optional GitHub sync lives under Passport tools in an inline panel. Push and
+  pull are explicit actions, with a visible repository, baseline status, and
+  privacy explanation. Conflicts block transfer; intentionally replacing local
+  records requires confirmation and leaves a downloadable pre-pull recovery copy.
 
 ## Accessibility
 
