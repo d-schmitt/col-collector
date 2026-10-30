@@ -6,9 +6,7 @@
   <meta name="color-scheme" content="light dark">
   <title>Col Collector</title>
   <link rel="icon" href="mountain.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="vendor/leaflet.css">
   <link rel="stylesheet" href="styles.css">
-  <script defer src="vendor/leaflet.js"></script>
   <script type="module" src="app.js"></script>
 </head>
 <body>
@@ -100,13 +98,18 @@
         <form id="location-form" class="location-search">
           <label for="location-input">Find a location</label>
           <div class="input-action">
-            <input id="location-input" name="location" type="search" placeholder="Try Bormio, Innsbruck or Briançon" maxlength="160" required autocomplete="off">
-            <button type="submit" class="primary">Search</button>
+            <input id="location-input" name="location" type="search" placeholder="Try Bormio, Innsbruck or Briançon" maxlength="160" required autocomplete="off" disabled>
+            <button type="submit" class="primary" disabled>Search</button>
           </div>
           <small>Search is sent to Photon. Map tiles come from OpenStreetMap.</small>
         </form>
         <div id="location-results" aria-live="polite"></div>
-        <div class="map-toolbar"><span id="map-caption">Explore the Alps</span><button id="fit-map" type="button">Show all matching passes</button></div>
+        <div class="map-toolbar"><span id="map-caption">Explore the Alps</span><button id="fit-map" type="button" disabled>Show all matching passes</button></div>
+        <p id="map-loading" role="status" hidden>Opening the map...</p>
+        <div id="map-assets-error" class="inline-error" role="alert" hidden>
+          <p id="map-assets-error-text"></p>
+          <button id="retry-map" type="button">Retry map</button>
+        </div>
         <div id="map" aria-label="Interactive pass map"></div>
         <p id="map-error" class="inline-error" hidden>Map tiles could not load. Check your connection; pass markers and the collection remain available.</p>
         <div class="map-legend"><span><i class="legend-dot"></i>Still to ride</span><span><i class="legend-dot done"></i>Collected</span><span>Click a marker to open a pass</span></div>

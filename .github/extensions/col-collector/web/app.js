@@ -9,6 +9,44 @@ let catalogue, state, selectedId = null, view = "collection", map, markers, loca
 let draft = false, saving = false, searchSequence = 0, updateNoticeShown = false;
 let noticeTimer;
 let syncBusy = false;
+let mapAssetsLoading;
+
+function loadMapAssets() {
+  if (mapAssetsLoading) return mapAssetsLoading;
+  const stylesheet = document.createElement("link");
+  stylesheet.rel = "stylesheet";
+  stylesheet.href = "vendor/leaflet.css";
+  const script = document.createElement("script");
+  script.src = "vendor/leaflet.js";
+  const resources = [stylesheet, script];
+  const cleanups = [];
+  // Wait for execution and styling, not just HTTP availability. Failed elements
+  // must be replaced on retry so a repaired folder works in the same document.
+  mapAssetsLoading = Promise.all(resources.map((element) => new Promise((resolve, reject) => {
+    const finish = (error) => {
+      clearTimeout(timer);
+      element.onload = element.onerror = null;
+      if (error) reject(error);
+      else resolve();
+    };
+    const timer = setTimeout(() => finish(new Error("Loading the bundled map assets timed out")), 15000);
+    cleanups.push(() => {
+      clearTimeout(timer);
+      element.onload = element.onerror = null;
+      element.remove();
+    });
+    element.onload = () => finish();
+    element.onerror = () => finish(new Error("A bundled map asset could not load"));
+    document.head.append(element);
+  }))).then(() => {
+    if (typeof window.L?.map !== "function") throw new Error("The bundled map script did not initialize");
+  }).catch((error) => {
+    cleanups.forEach((cleanup) => cleanup());
+    mapAssetsLoading = null;
+    throw error;
+  });
+  return mapAssetsLoading;
+}
 
 async function api(path, body) {
   const response = await fetch(`api/${path}`, body === undefined ? {} : {
@@ -77,7 +115,6 @@ function renderCards() {
 
 function initializeMap() {
   if (map) { map.invalidateSize(); return; }
-  if (!window.L) throw new Error("Map assets could not load. Run npm ci in the repository, then reopen the canvas. Your collection still works.");
   map = L.map("map", { scrollWheelZoom: false }).setView([46.5, 9.2], 7);
   const tiles = L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png", {
     maxZoom: 18,
@@ -107,13 +144,30 @@ function renderMarkers() {
   }
 }
 
-function setView(next) {
+async function setView(next) {
   view = next;
   $("#collection-tab").setAttribute("aria-pressed", String(next === "collection"));
   $("#map-tab").setAttribute("aria-pressed", String(next === "map"));
   $("#map-view").hidden = next !== "map";
-  if (next === "map") initializeMap();
+  if (next === "map") {
+    $("#map-loading").hidden = false;
+    $("#map-assets-error").hidden = true;
+    try {
+      await loadMapAssets();
+      if (view !== "map") return false;
+      initializeMap();
+      for (const element of document.querySelectorAll("#location-form input, #location-form button, #fit-map")) element.disabled = false;
+    } catch (error) {
+      if (map) map.remove();
+      map = markers = locationMarker = null;
+      $("#map-assets-error-text").textContent = `${error.message}. Retry the map. If this keeps happening, reinstall or update the complete Col Collector extension folder, then reopen the panel. Your collection and saved records remain available.`;
+      $("#map-assets-error").hidden = false;
+      renderCards();
+      return false;
+    } finally { $("#map-loading").hidden = true; }
+  }
   renderCards();
+  return true;
 }
 
 function confirmChange(message, acceptLabel) {
@@ -210,7 +264,7 @@ function renderDetail() {
     $("#group-filter").value = "all";
     $("#status-filter").value = "all";
     $("#pass-search").value = "";
-    setView("map");
+    if (!await setView("map")) return;
     renderMarkers();
     map.setView([pass.latitude, pass.longitude], 12);
   });
@@ -310,6 +364,7 @@ $("#reload-button").onclick = run(async () => {
 });
 $("#collection-tab").onclick = run(() => setView("collection"));
 $("#map-tab").onclick = run(() => setView("map"));
+$("#retry-map").onclick = run(() => setView("map"));
 $("#cards").onclick = run(async (event) => {
   const button = event.target.closest("[data-pass]");
   if (button) await openPass(button.dataset.pass);
