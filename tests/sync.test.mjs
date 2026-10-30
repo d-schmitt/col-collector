@@ -42,6 +42,48 @@ test("private sync stores separate binary photos and round-trips the passport", 
   assert.equal(b.sync.status().hasRecovery, true);
 });
 
+test("unknown approaches survive private sync, edits, conflict recovery and deletion", async (t) => {
+  const { github, devices: [a, b] } = await setup(t);
+  const passId = "pass-965d3e148f028ea0";
+  const first = save(a, { approachId: null, passId, photo: PNG, note: "Unknown approach" });
+  save(a, { approachId: null, passId });
+  await push(a);
+  const manifest = JSON.parse(github.read("passport.json"));
+  assert.equal(manifest.backup.version, 2);
+  assert.ok(manifest.backup.ascents.every((ascent) => ascent.approachId === null && ascent.passId === passId));
+  await pull(b);
+  assert.deepEqual(b.store.export().ascents, a.store.export().ascents);
+  save(b, { id: first.id, approachId: null, passId, note: "Edited on another device" });
+  await push(b);
+  save(a, { approachId: null, passId, note: "Local repeat" });
+  const before = a.store.export();
+  await assert.rejects(push(a), /have not pulled/);
+  await assert.rejects(pull(a), /unpushed local/);
+  await pull(a, true);
+  assert.deepEqual(a.store.getMetadata("syncRecovery").ascents, before.ascents);
+  assert.deepEqual(a.store.export().ascents, b.store.export().ascents);
+  a.store.restore({ revision: a.store.revision(), backup: a.store.getMetadata("syncRecovery") });
+  assert.deepEqual(a.store.export().ascents, before.ascents);
+  for (const ascent of a.store.state().ascents) a.store.deleteAscent({ revision: a.store.revision(), id: ascent.id });
+  await push(a);
+  await pull(b);
+  assert.equal(b.store.state().ascents.length, 0);
+});
+
+test("private sync accepts version-one backups without changing their records", async (t) => {
+  const { github, devices: [a, b] } = await setup(t);
+  save(a, { photo: PNG });
+  await push(a);
+  const manifest = JSON.parse(github.read("passport.json"));
+  manifest.backup.version = 1;
+  for (const ascent of manifest.backup.ascents) delete ascent.passId;
+  github.commitFiles({ "passport.json": Buffer.from(JSON.stringify(manifest)) });
+  await pull(b);
+  assert.deepEqual(b.store.export().ascents, a.store.export().ascents);
+  await push(b);
+  assert.equal(JSON.parse(github.read("passport.json")).backup.version, 2);
+});
+
 test("fresh device cannot push over an existing remote backup", async (t) => {
   const { github, devices: [a, b] } = await setup(t);
   save(a);

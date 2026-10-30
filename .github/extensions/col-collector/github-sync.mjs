@@ -15,7 +15,7 @@ const canonical = (value) => JSON.stringify(value, function (_key, item) {
 const gitHash = (bytes) => createHash("sha1").update(`blob ${bytes.length}\0`).update(bytes).digest("hex");
 
 function assertBackupSize(backup) {
-  if (!backup || backup.format !== "col-collector-passport" || backup.version !== 1 ||
+  if (!backup || backup.format !== "col-collector-passport" || ![1, 2].includes(backup.version) ||
       !Array.isArray(backup.approaches) || !Array.isArray(backup.ascents) ||
       backup.approaches.length > 10000 || backup.ascents.length > 10000 ||
       [...backup.approaches, ...backup.ascents].some((record) => !record || typeof record.id !== "string") ||
