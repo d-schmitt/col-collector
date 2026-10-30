@@ -122,7 +122,7 @@ export async function startServer({ store, catalogue, geocode = createGeocoder(s
         } else if (ASSETS.has(path)) {
           try { content = await readFile(new URL(path, WEB)); }
           catch (error) {
-            if (error.code === "ENOENT" && path.startsWith("vendor/")) throw new InputError("Map assets are missing. Run npm ci in the repository and reopen the canvas.", 503);
+            if (error.code === "ENOENT" && path.startsWith("vendor/")) throw new InputError("Bundled map assets are missing. Reinstall or update the complete Col Collector extension folder, then reopen the panel.", 503);
             throw error;
           }
           type = MIME[path.slice(path.lastIndexOf("."))] || "application/octet-stream";

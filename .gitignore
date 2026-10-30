@@ -2,7 +2,6 @@ node_modules/
 .DS_Store
 test-results/
 playwright-report/
-.github/extensions/col-collector/web/vendor/
 *.tmp
 __pycache__/
 

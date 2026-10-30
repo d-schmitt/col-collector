@@ -37,18 +37,20 @@ Open the loopback URL printed by the server. It includes a randomly generated
 access token; do not share that URL. The process binds only to `127.0.0.1`.
 Use Ctrl+C to stop the standalone server. No build step or external account is
 required for local use. GitHub sync additionally needs the authenticated `gh`
-CLI on the extension process's PATH. `npm ci` copies Leaflet's assets and license into the extension's
-ignored `web/vendor/` directory.
+CLI on the extension process's PATH. Leaflet 1.9.4 JavaScript, CSS and its BSD-2-Clause
+license are committed in the extension's `web/vendor/` directory. No CDN or
+dependency installation is needed to load the map. For development, `npm ci`
+also refreshes these files from the pinned package; after a Leaflet upgrade,
+run `npm run assets` and commit the updated assets and license together.
 
 ## Open in Copilot
 
 The project-scoped extension lives at
 `.github/extensions/col-collector/extension.mjs`.
 
-1. Run `npm ci` in this checkout.
-2. Reload extensions if your Copilot runtime exposes that action, or start a new
+1. Reload extensions if your Copilot runtime exposes that action, or start a new
    Copilot session **in this checkout** so the project extension is discovered.
-3. Ask Copilot to **open the Col Collector canvas**.
+2. Ask Copilot to **open the Col Collector canvas**.
 
 The canvas type is `col-collector`, under provider `project:col-collector`.
 The runtime supplies `@github/copilot-sdk`; do not install a separate SDK copy.
@@ -56,6 +58,24 @@ The host must support extension canvases and a JavaScript runtime with
 `node:sqlite`. The extension uses the installed SDK's `createCanvas` / `joinSession`
 API and exposes read-only `get_progress` and `find_passes` actions. All editing
 controls live inside the canvas.
+
+For a **user-scope install**, install the complete
+`.github/extensions/col-collector/` folder using the app's extension installer,
+or copy that complete folder to `$COPILOT_HOME/extensions/col-collector/`
+(`~/.copilot/extensions/col-collector/` by default). Keep its `web/`, `web/vendor/`,
+`data/` and module files together. No repository checkout, `npm ci`, manual asset
+copying or separate SDK installation is required. Start a new session or reload
+extensions, then open the canvas under provider `user:col-collector`. A project
+extension with the same name shadows the user extension in that checkout.
+Updating a checkout does not update a separately installed user extension.
+
+The renderer waits for its local map script and stylesheet before initializing
+the map. If either fails, the collection still works and **Retry map** retries
+without reloading records. An incomplete installation needs the complete
+extension folder updated or reinstalled, then its panel reopened. Existing
+documents do not automatically execute assets copied into the folder after
+the document loaded. Tile outages have a separate message; markers and the
+collection remain usable while OpenStreetMap is unavailable.
 
 Closing a panel stops its local HTTP server, not the passport. Reopening the
 canvas, using another instance ID, or switching worktrees loads the same private
@@ -287,6 +307,13 @@ tests stub external map tiles and location results; they cover both viewport
 sizes, filtering, preloaded Klausenpass approaches, repeat ascents, optional dates, photo
 editing, backup/restore, deletion, stale-write recovery, and Mortirolo's
 unknown-approach flow through collection, map and detail views.
+Folder-only installation tests copy only distributable extension files to a
+temporary location without a checkout, package manifest, `node_modules` or
+postinstall. They check the pinned Leaflet assets and license against the npm
+package, then initialize the real styled map in Chromium. They also cover
+delayed, missing, non-executing and timed-out assets, in-page retry after repair,
+tile outages and preservation of saved records. Ignored/generated files in a
+development checkout cannot supply missing files to these fixtures.
 Importer/storage tests require coverage of all 437 passes and preserve historical
 custom-route records through the schema migration. Unknown ascents are checked
 through editing, photo retention/removal, backup versions and private sync.
