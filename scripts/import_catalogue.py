@@ -15,6 +15,7 @@ EXPORT = "https://www.google.com/maps/d/kml?mid=1GPHWvjnIKIObSl2m5ykGzmm-BJd5aXW
 LAYERS = {"Paved passes +2000": "high", "Paved passes -2000": "low"}
 NS = {"k": "http://www.opengis.net/kml/2.2"}
 DESTINATION = Path(__file__).resolve().parents[1] / ".github/extensions/col-collector/data/catalogue.json"
+OVERRIDES = DESTINATION.with_name("reviewed-overrides.json")
 DISPLAY_NAMES = {"pass-965d3e148f028ea0": "Mortirolo"}
 
 
@@ -26,6 +27,33 @@ def number(value):
     except ValueError:
         return None
     return result if math.isfinite(result) else None
+
+
+def load_overrides():
+    return json.loads(OVERRIDES.read_text())
+
+
+def apply_overrides(catalogue, overrides=None):
+    overrides = load_overrides() if overrides is None else overrides
+    passes = list(catalogue["passes"])
+    ids = {item["id"] for item in passes}
+    for addition in overrides.get("additions", []):
+        item = addition["pass"]
+        if item["id"] in ids:
+            raise ValueError(f"Reviewed addition collides with source pass ID: {item['id']}")
+        if not re.fullmatch(r"climb-[a-z0-9-]+", item["id"]):
+            raise ValueError(f"Reviewed addition ID must use the climb- prefix: {item['id']}")
+        if (not item.get("name") or item.get("group") not in {"high", "low"} or
+                not all(math.isfinite(item[key]) for key in ("latitude", "longitude", "elevation")) or
+                not -90 <= item["latitude"] <= 90 or not -180 <= item["longitude"] <= 180):
+            raise ValueError(f"Invalid reviewed addition: {item['id']}")
+        ids.add(item["id"])
+        passes.append(item)
+    return {
+        **catalogue,
+        "reviewedAdditionCount": len(overrides.get("additions", [])),
+        "passes": sorted(passes, key=lambda p: (-(p["elevation"] or 0), p["name"])),
+    }
 
 
 def parse_catalogue(xml):
@@ -107,7 +135,7 @@ def main():
     else:
         with urllib.request.urlopen(EXPORT, timeout=30) as response:
             xml = response.read()
-    catalogue = parse_catalogue(xml)
+    catalogue = apply_overrides(parse_catalogue(xml))
     DESTINATION.parent.mkdir(parents=True, exist_ok=True)
     DESTINATION.write_text(json.dumps(catalogue, ensure_ascii=False, indent=2) + "\n")
     print(json.dumps({"counts": catalogue["counts"], "warnings": catalogue["warnings"]}, indent=2))

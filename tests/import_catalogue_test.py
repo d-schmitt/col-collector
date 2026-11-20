@@ -34,6 +34,18 @@ class ImportTests(unittest.TestCase):
         result = importer.parse_catalogue(document())
         self.assertEqual(len(result["passes"]), 2)
 
+    def test_reviewed_additions_survive_catalogue_import_without_changing_source_ids(self):
+        source = importer.parse_catalogue(document())
+        original_ids = {item["id"] for item in source["passes"]}
+        result = importer.apply_overrides(source)
+        additions = {item["id"]: item for item in result["passes"] if item["id"].startswith("climb-")}
+        self.assertEqual(set(additions), {"climb-alpe-dhuez", "climb-torri-di-fraele"})
+        self.assertEqual({item["id"] for item in result["passes"]} - set(additions), original_ids)
+        self.assertEqual(additions["climb-alpe-dhuez"]["elevation"], 1860)
+        self.assertEqual(additions["climb-torri-di-fraele"]["elevation"], 1930)
+        self.assertTrue(all(addition["sources"]["coordinates"] and addition["sources"]["elevation"]
+                            for addition in importer.load_overrides()["additions"]))
+
     def test_source_membership_preserved_at_boundary(self):
         result = importer.parse_catalogue(document(first_altitude="2000"))
         high = next(p for p in result["passes"] if p["name"] == "High")

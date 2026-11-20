@@ -26,24 +26,32 @@ function restoreLegacy(store, { name = "East side", passId = catalogue.passes[0]
   store.restore({ revision: store.revision(), backup });
 }
 
-test("catalogue contains exactly both paved layers and valid distinct IDs", () => {
-  assert.equal(catalogue.passes.length, 437);
-  assert.equal(new Set(catalogue.passes.map((p) => p.id)).size, 437);
+test("catalogue contains source layers and reviewed additions with valid distinct IDs", () => {
+  assert.equal(catalogue.passes.length, 439);
+  assert.equal(new Set(catalogue.passes.map((p) => p.id)).size, 439);
   assert.equal(catalogue.passes.filter((p) => p.group === "high").length, 86);
-  assert.equal(catalogue.passes.filter((p) => p.group === "low").length, 351);
+  assert.equal(catalogue.passes.filter((p) => p.group === "low").length, 353);
   for (const p of catalogue.passes) {
     assert.ok(p.latitude >= -90 && p.latitude <= 90);
     assert.ok(p.longitude >= -180 && p.longitude <= 180);
     assert.ok(Number.isFinite(p.elevation));
-    assert.ok(p.sourceLayer.startsWith("Paved passes"));
+    assert.ok(p.sourceLayer.startsWith("Paved passes") || p.sourceLayer === "reviewed addition");
   }
+  assert.deepEqual(catalogue.passes.filter((p) => p.id.startsWith("climb-")).map((p) => p.id).sort(),
+    ["climb-alpe-dhuez", "climb-torri-di-fraele"]);
+  assert.deepEqual(catalogue.passes.filter((p) => p.id.startsWith("climb-")).map(({ id, latitude, longitude, elevation }) =>
+    [id, latitude, longitude, elevation]).sort(),
+  [
+    ["climb-alpe-dhuez", 45.0923082, 6.0722839, 1860],
+    ["climb-torri-di-fraele", 46.5018436, 10.309948, 1930],
+  ]);
   assert.equal(catalogue.warnings.length, 2);
 });
 
-test("all 437 passes have source-backed preloaded choices and existing IDs survive", () => {
-  assert.equal(verified.length, 1340);
+test("all 439 mapped climbs have preloaded choices and existing IDs survive", () => {
+  assert.equal(verified.length, 1342);
   assert.equal(new Set(verified.map((a) => a.id)).size, verified.length);
-  assert.equal(new Set(verified.map((a) => a.passId)).size, 437);
+  assert.equal(new Set(verified.map((a) => a.passId)).size, 439);
   for (const pass of catalogue.passes) assert.ok(verified.some((a) => a.passId === pass.id), pass.name);
   assert.deepEqual(verified.filter((a) => a.passId === "pass-dab2867494683188").map((a) => a.name),
     ["From Altdorf (Tell monument)", "From Linthal station", "From Schattdorf"]);
@@ -64,8 +72,8 @@ test("every pass can be collected without creating an approach", async (t) => {
     save(store, { approachId: approach.id });
   }
   const state = store.state();
-  assert.equal(state.ascents.length, 437);
-  assert.equal(completedPassIds(state.approaches, state.ascents).size, 437);
+  assert.equal(state.ascents.length, 439);
+  assert.equal(completedPassIds(state.approaches, state.ascents).size, 439);
   assert.deepEqual(store.export().approaches, []);
 });
 
@@ -79,12 +87,12 @@ test("one ascent completes only its pass, not other approaches; repeats count on
   assert.equal(state.ascents.length, 2);
   assert.equal(state.ascents.filter((a) => a.approachId === "stelvio-bormio").length, 0);
   assert.equal(filterPasses(catalogue.passes, done, { status: "done" }).length, 1);
-  assert.equal(filterPasses(catalogue.passes, done, { status: "todo" }).length, 436);
+  assert.equal(filterPasses(catalogue.passes, done, { status: "todo" }).length, 438);
 });
 
 test("filters intersect and name search ignores diacritics", () => {
   assert.equal(filterPasses(catalogue.passes, new Set(), { group: "high" }).length, 86);
-  assert.equal(filterPasses(catalogue.passes, new Set(), { group: "low" }).length, 351);
+  assert.equal(filterPasses(catalogue.passes, new Set(), { group: "low" }).length, 353);
   assert.equal(filterPasses(catalogue.passes, new Set(), { query: "galibier", group: "low" }).length, 0);
   assert.equal(filterPasses([{ name: "Viòte", group: "low", id: "1" }], new Set(), { query: "viote" }).length, 1);
 });
@@ -113,9 +121,9 @@ test("unknown approaches collect every pass without creating or completing named
   for (const pass of catalogue.passes) save(store, { approachId: null, passId: pass.id });
   const state = store.state();
   assert.equal(state.approaches.length, verified.length);
-  assert.equal(state.ascents.length, 437);
+  assert.equal(state.ascents.length, 439);
   assert.ok(state.ascents.every((a) => a.approachId === null && a.date === "" && a.note === "" && !a.hasPhoto));
-  assert.equal(completedPassIds(state.approaches, state.ascents).size, 437);
+  assert.equal(completedPassIds(state.approaches, state.ascents).size, 439);
   assert.deepEqual(store.export().approaches, []);
 });
 
@@ -303,7 +311,7 @@ for (const schema of [1, 2]) test(`schema-${schema} passports retain ride IDs, p
   old.close();
   const store = await Store.open(path, catalogue, verified);
   t.after(async () => { store.close(); await rm(dir, { recursive: true }); });
-  assert.equal(store.state().approaches.length, 1341);
+  assert.equal(store.state().approaches.length, 1343);
   assert.equal(store.state().ascents[0].id, "old-ride");
   assert.equal(store.state().ascents[0].note, "Keep this");
   assert.equal(Buffer.from(store.photo("old-ride").bytes).toString("base64"), PNG.split(",")[1]);

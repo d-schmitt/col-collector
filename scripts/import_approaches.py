@@ -10,7 +10,7 @@ import xml.etree.ElementTree as ET
 from datetime import datetime, timezone
 from pathlib import Path
 
-from import_catalogue import EXPORT, LAYERS, NS, SOURCE
+from import_catalogue import EXPORT, LAYERS, NS, SOURCE, load_overrides
 
 DATA = Path(__file__).resolve().parents[1] / ".github/extensions/col-collector/data"
 ANNOTATION = re.compile(
@@ -136,7 +136,13 @@ def cautions(notes):
     return result
 
 
-def build(xml, catalogue, verified):
+def build(xml, catalogue, verified, overrides=None):
+    overrides = load_overrides() if overrides is None else overrides
+    additions = overrides.get("additions", [])
+    added_ids = {item["pass"]["id"] for item in additions}
+    catalogue_ids = {item["id"] for item in catalogue["passes"]}
+    if not added_ids <= catalogue_ids:
+        raise ValueError("Reviewed additions are missing from the catalogue; refresh it first")
     root = ET.fromstring(xml)
     by_location = {(p["name"], round(p["longitude"], 6), round(p["latitude"], 6)): p for p in catalogue["passes"]}
     approaches = [{**a, "sourceKind": "verified-route"} for a in verified]
@@ -186,20 +192,31 @@ def build(xml, catalogue, verified):
             if flags:
                 warnings[point["id"]] = flags
             audit.append({"pass": name, "starts": starts, "excluded": excluded})
-    if seen != {p["id"] for p in catalogue["passes"]}:
+    if seen != catalogue_ids - added_ids:
         raise ValueError("Missing source entries; refusing a partially populated catalogue")
+    for addition in additions:
+        pass_id = addition["pass"]["id"]
+        if addition.get("cautions"):
+            warnings[pass_id] = addition["cautions"]
+        for route in addition.get("approaches", []):
+            approaches.append({
+                **route,
+                "passId": pass_id,
+                "sourceKind": "reviewed-addition",
+            })
     if len({a["id"] for a in approaches}) != len(approaches):
         raise ValueError("Duplicate approach identifiers")
-    if {a["passId"] for a in approaches} != seen:
+    if {a["passId"] for a in approaches} != catalogue_ids:
         raise ValueError("Every catalogue pass must have at least one preloaded approach")
     report = {
         "sourceUrl": SOURCE,
         "sourceName": "cycloclimbing.com / selected Google My Maps layers",
         "importedAt": datetime.now(timezone.utc).isoformat(),
-        "passCount": len(seen),
+        "passCount": len(catalogue_ids),
         "approachCount": len(approaches),
         "mapStartCount": sum(a["sourceKind"] == "map-start" for a in approaches),
         "verifiedRouteCount": len(verified),
+        "reviewedAdditionCount": len(additions),
         "cautions": warnings,
     }
     return sorted(approaches, key=lambda a: (a["passId"], a["name"])), report, audit

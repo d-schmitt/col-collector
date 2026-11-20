@@ -60,7 +60,7 @@ test("manual approach creation is retired and every pass is ready to log", async
   assert.match((await response.json()).error, /preloaded/);
   const state = await fetch(server.url + "api/state").then((r) => r.json());
   assert.equal(state.revision, 0);
-  assert.equal(new Set(state.approaches.filter((a) => a.verified).map((a) => a.passId)).size, 437);
+  assert.equal(new Set(state.approaches.filter((a) => a.verified).map((a) => a.passId)).size, 439);
 });
 
 test("HTTP and canvas support unknown ascents and Mortirolo's source aliases", async (t) => {
@@ -74,7 +74,7 @@ test("HTTP and canvas support unknown ascents and Mortirolo's source aliases", a
   assert.equal(state.ascents[0].approachId, null);
   assert.equal(state.ascents[0].passId, "pass-965d3e148f028ea0");
   const canvas = collectorCanvas({ createCanvas: (options) => options, CanvasError: Error }, runtime);
-  assert.deepEqual(canvas.actions[0].handler(), { totalPasses: 437, completedPasses: 1, recordedAscents: 1 });
+  assert.deepEqual(canvas.actions[0].handler(), { totalPasses: 439, completedPasses: 1, recordedAscents: 1 });
   for (const query of ["Mortirolo", "Foppa"]) {
     assert.deepEqual(canvas.actions[1].handler({ input: { query } }), [
       { id: "pass-965d3e148f028ea0", name: "Mortirolo", elevation: 1855, completed: true },
@@ -117,7 +117,7 @@ test("canvas opens idempotently and fresh instances share the passport", async (
   assert.notEqual(first.url, other.url);
   runtime.store.saveAscent({ revision: 0, approachId: "stelvio-prad" });
   assert.equal((await fetch(other.url + "api/state").then((r) => r.json())).ascents.length, 1);
-  assert.deepEqual(canvas.actions[0].handler(), { totalPasses: 437, completedPasses: 1, recordedAscents: 1 });
+  assert.deepEqual(canvas.actions[0].handler(), { totalPasses: 439, completedPasses: 1, recordedAscents: 1 });
   assert.equal(canvas.actions[1].handler({ input: { query: "Stelvio" } })[0].completed, true);
   await canvas.onClose({ instanceId: "one" });
   await assert.rejects(fetch(first.url));
