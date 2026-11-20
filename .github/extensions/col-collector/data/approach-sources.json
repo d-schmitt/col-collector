@@ -1,11 +1,12 @@
 {
   "sourceUrl": "https://www.google.com/maps/d/viewer?mid=1GPHWvjnIKIObSl2m5ykGzmm-BJd5aXWU",
   "sourceName": "cycloclimbing.com / selected Google My Maps layers",
-  "importedAt": "2026-10-29T21:48:28.374215+00:00",
-  "passCount": 437,
-  "approachCount": 1340,
+  "importedAt": "2026-11-20T22:56:38.611413+00:00",
+  "passCount": 439,
+  "approachCount": 1342,
   "mapStartCount": 1335,
   "verifiedRouteCount": 5,
+  "reviewedAdditionCount": 2,
   "cautions": {
     "pass-5ee4d83d23902af5": [
       "The source mentions unpaved sections or walking on this pass or connected routes. Check the original reference for your chosen approach."
@@ -297,6 +298,9 @@
     ],
     "pass-2b514e9efd165950": [
       "The source flags access restrictions, closures or road damage. Check current cycling access before riding."
+    ],
+    "climb-torri-di-fraele": [
+      "The access road can be closed or subject to specific access rules; check current conditions before riding."
     ]
   }
 }

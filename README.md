@@ -6,12 +6,12 @@ ascent journal. The same interface can also run in a local browser.
 
 ## What it does
 
-- **437 mapped passes:** 86 in the original "Paved passes +2000" layer and 351 in
-  "Paved passes -2000", with location search, map browsing, and shared
-  elevation/completion/name filters.
+- **439 mapped climbs:** the 437 source-listed paved passes (86 in "Paved passes
+  +2000" and 351 in "Paved passes -2000") plus two reviewed summit finishes,
+  with location search, map browsing, and shared elevation/completion/name filters.
 - **A collectible passport:** unfinished passes are grayscale; completed passes
   become colorful. Your own summit photo appears on the card when available.
-- **Preloaded approaches for every pass:** choose from 1,340 source-backed options,
+- **Preloaded approaches for every mapped climb:** choose from 1,342 source-backed options,
   without adding your own route. Riding any one collects the pass, without marking
   the other choices complete. Repeat ascents are separate records.
 - **Unsure which approach you rode?** Choose **Log ascent · approach unknown**.
@@ -96,21 +96,29 @@ No gravel, valley, mountainside, or other layers are imported.
 Original membership determines the groups; summit elevation is **not** climbing
 elevation gain.
 
+The catalogue also includes selected iconic summit finishes, even though they
+are not passes: Alpe d’Huez and Torri di Fraele. Their reviewed coordinates,
+elevations and approaches are kept in `reviewed-overrides.json`, so source
+refreshes preserve these additions without changing existing pass IDs.
+
 The snapshot records source URLs, import time, counts, and validation warnings.
 Two CentCols references are shared by differently named, differently located
 points. They remain distinct mapped passes; reference codes alone are not used
-as identifiers. IDs derive from the source name and coordinates, not list order.
-Renaming or moving a source entry changes its generated ID, so catalogue refreshes
-must be reviewed before replacing a version used by existing passports.
+as identifiers. Source pass IDs derive from the source name and coordinates,
+not list order; reviewed additions use stable `climb-` IDs that are distinct from
+generated `pass-` IDs. Renaming or moving a source entry changes its generated
+ID, so catalogue refreshes must be reviewed before replacing a version used by
+existing passports.
 Display-name overrides do not change source names or IDs: **Mortirolo** is shown
 as the primary name for Passo della Foppa, while the original source name and
 aliases remain visible in the detail view and searchable. The catalogue importer
 preserves this override.
 
-**Every one of the 437 passes has preloaded choices.** The approach catalogue
-contains 1,335 starting-point variants extracted from the map's factual start
-locations, plus five previously verified routes for Stelvio and Galibier. The
-five routes retain their original IDs and their metrics checked against
+**Every one of the 439 mapped climbs has preloaded choices.** The approach
+catalogue contains 1,335 starting-point variants extracted from the map's factual
+start locations, five previously verified routes for Stelvio and Galibier, and
+two reviewed summit-finish approaches. The five routes retain their original IDs
+and their metrics checked against
 [quäldich](https://www.quaeldich.de/paesse/) on 29 October 2026. Duplicate
 Stelvio starting points are reconciled with those existing IDs.
 
@@ -314,7 +322,7 @@ package, then initialize the real styled map in Chromium. They also cover
 delayed, missing, non-executing and timed-out assets, in-page retry after repair,
 tile outages and preservation of saved records. Ignored/generated files in a
 development checkout cannot supply missing files to these fixtures.
-Importer/storage tests require coverage of all 437 passes and preserve historical
+Importer/storage tests require coverage of all 439 mapped climbs and preserve historical
 custom-route records through the schema migration. Unknown ascents are checked
 through editing, photo retention/removal, backup versions and private sync.
 Sync tests use a fake GitHub service for separate photos, multi-device round

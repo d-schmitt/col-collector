@@ -1,5 +1,19 @@
 [
   {
+    "id": "climb-alpe-dhuez-bourg-doisans",
+    "name": "From Bourg-d’Oisans (21 hairpins)",
+    "sourceUrl": "https://www.alpedhuez.com/en/activities/summer-activities/bike/the-21-bends/",
+    "passId": "climb-alpe-dhuez",
+    "sourceKind": "reviewed-addition"
+  },
+  {
+    "id": "climb-torri-di-fraele-bormio",
+    "name": "From Bormio (via Premadio and Fior d’Alpe)",
+    "sourceUrl": "https://www.valdidentroturismo.it/en/cancano/",
+    "passId": "climb-torri-di-fraele",
+    "sourceKind": "reviewed-addition"
+  },
+  {
     "id": "map-start-493d41d7225b9c58f90c",
     "passId": "pass-00018e1cedddd149",
     "name": "From Bovec",

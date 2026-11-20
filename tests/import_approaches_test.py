@@ -6,6 +6,7 @@ from xml.sax.saxutils import escape
 
 sys.path.insert(0, str(Path(__file__).parents[1] / "scripts"))
 from import_approaches import build, cautions, extract_starts
+from import_catalogue import load_overrides
 
 DATA = Path(__file__).parents[1] / ".github/extensions/col-collector/data"
 
@@ -52,25 +53,44 @@ class ApproachTests(unittest.TestCase):
     def test_missing_pass_or_unparseable_start_fails_instead_of_filling_a_placeholder(self):
         catalogue = {"passes": [{"id": "test", "name": "Test pass", "longitude": 10, "latitude": 46, "elevation": 2100, "sourceUrl": None}]}
         with self.assertRaisesRegex(ValueError, "No unambiguous"):
-            build(source("fr. unknown"), catalogue, [])
+            build(source("fr. unknown"), catalogue, [], {"additions": []})
         catalogue["passes"].append({**catalogue["passes"][0], "id": "missing", "name": "Missing pass"})
         with self.assertRaisesRegex(ValueError, "Missing source entries"):
-            build(source("fr. Alpha 400"), catalogue, [])
+            build(source("fr. Alpha 400"), catalogue, [], {"additions": []})
 
     def test_ids_are_stable_across_marker_formatting(self):
         catalogue = {"passes": [{"id": "test", "name": "Test pass", "longitude": 10, "latitude": 46, "elevation": 2100, "sourceUrl": None}]}
-        first, _, _ = build(source("fr. *Alpha 400"), catalogue, [])
-        second, _, _ = build(source("fr. Alpha   400"), catalogue, [])
+        first, _, _ = build(source("fr. *Alpha 400"), catalogue, [], {"additions": []})
+        second, _, _ = build(source("fr. Alpha   400"), catalogue, [], {"additions": []})
         self.assertEqual(first, second)
+
+    def test_reviewed_addition_approaches_survive_approach_import(self):
+        overrides = load_overrides()
+        catalogue = {
+            "passes": [
+                {"id": "test", "name": "Test pass", "longitude": 10, "latitude": 46, "elevation": 2100, "sourceUrl": None},
+                *[item["pass"] for item in overrides["additions"]],
+            ]
+        }
+        approaches, report, _ = build(source("fr. Alpha 400"), catalogue, [], overrides)
+        reviewed = [item for item in approaches if item["sourceKind"] == "reviewed-addition"]
+        self.assertEqual({item["passId"] for item in reviewed}, {"climb-alpe-dhuez", "climb-torri-di-fraele"})
+        self.assertEqual(report["reviewedAdditionCount"], 2)
+        self.assertEqual({item["name"] for item in reviewed}, {
+            "From Bourg-d’Oisans (21 hairpins)",
+            "From Bormio (via Premadio and Fior d’Alpe)",
+        })
+        self.assertEqual(report["passCount"], 3)
+        self.assertIn("climb-torri-di-fraele", report["cautions"])
 
     def test_snapshot_coverage_and_no_placeholder_routes(self):
         catalogue = json.loads((DATA / "catalogue.json").read_text())
         approaches = json.loads((DATA / "approaches.json").read_text())
         report = json.loads((DATA / "approach-sources.json").read_text())
         self.assertEqual({a["passId"] for a in approaches}, {p["id"] for p in catalogue["passes"]})
-        self.assertEqual(report["passCount"], 437)
+        self.assertEqual(report["passCount"], 439)
         self.assertEqual(report["approachCount"], len(approaches))
-        self.assertEqual(report["mapStartCount"] + report["verifiedRouteCount"], len(approaches))
+        self.assertEqual(report["mapStartCount"] + report["verifiedRouteCount"] + report["reviewedAdditionCount"], len(approaches))
         self.assertTrue(all(a["name"].startswith("From ") and a["sourceUrl"] for a in approaches))
         self.assertFalse(any("unknown" in a["name"].lower() for a in approaches))
 

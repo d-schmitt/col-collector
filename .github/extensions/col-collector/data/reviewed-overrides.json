@@ -1,0 +1,64 @@
+{
+  "version": 1,
+  "additions": [
+    {
+      "pass": {
+        "id": "climb-alpe-dhuez",
+        "name": "Alpe d’Huez",
+        "latitude": 45.0923082,
+        "longitude": 6.0722839,
+        "elevation": 1860,
+        "group": "low",
+        "sourceLayer": "reviewed addition",
+        "sourceUrl": "https://www.alpedhuez.com/en/activities/summer-activities/bike/the-21-bends/",
+        "sourceClimbMetres": null,
+        "centCols": null
+      },
+      "sources": {
+        "coordinates": "https://www.openstreetmap.org/way/28452050",
+        "elevation": "https://www.alpedhuez.com/en/activities/summer-activities/bike/the-21-bends/",
+        "approach": "https://www.alpedhuez.com/en/activities/summer-activities/bike/the-21-bends/",
+        "sarenneAssessment": "https://www.alpes-isere.com/sit/de-lalpe-dhuez-au-col-de-sarenne-236294/"
+      },
+      "reviewNote": "No separate Col de Sarenne approach is listed: the official route reaches Alpe d’Huez from Bourg-d’Oisans, then crosses the Col de Sarenne on the descent toward Clavans.",
+      "approaches": [
+        {
+          "id": "climb-alpe-dhuez-bourg-doisans",
+          "name": "From Bourg-d’Oisans (21 hairpins)",
+          "sourceUrl": "https://www.alpedhuez.com/en/activities/summer-activities/bike/the-21-bends/"
+        }
+      ]
+    },
+    {
+      "pass": {
+        "id": "climb-torri-di-fraele",
+        "name": "Torri di Fraele",
+        "latitude": 46.5018436,
+        "longitude": 10.309948,
+        "elevation": 1930,
+        "group": "low",
+        "sourceLayer": "reviewed addition",
+        "sourceUrl": "https://www.in-lombardia.it/en/tourism-in-lombardy/tourism-sondrio/torri-di-fraele",
+        "sourceClimbMetres": null,
+        "centCols": null
+      },
+      "sources": {
+        "coordinates": "https://www.openstreetmap.org/node/5526229282",
+        "elevation": "https://www.in-lombardia.it/en/tourism-in-lombardy/tourism-sondrio/torri-di-fraele",
+        "approach": "https://www.valdidentroturismo.it/en/cancano/"
+      },
+      "approaches": [
+        {
+          "id": "climb-torri-di-fraele-bormio",
+          "name": "From Bormio (via Premadio and Fior d’Alpe)",
+          "sourceUrl": "https://www.valdidentroturismo.it/en/cancano/"
+        }
+      ],
+      "cautions": [
+        "The access road can be closed or subject to specific access rules; check current conditions before riding."
+      ]
+    }
+  ],
+  "exclusions": [],
+  "corrections": []
+}

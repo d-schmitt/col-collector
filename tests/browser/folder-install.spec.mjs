@@ -13,7 +13,7 @@ test.afterEach(async () => { await install.dispose(); });
 
 async function expectMap(page) {
   await expect(page.locator("#map")).toHaveClass(/leaflet-container/);
-  await expect(page.locator(".leaflet-overlay-pane path")).toHaveCount(437);
+  await expect(page.locator(".leaflet-overlay-pane path")).toHaveCount(439);
   await expect(page.locator(".leaflet-control-zoom-in")).toBeVisible();
   await expect(page.locator(".leaflet-control-attribution")).toContainText("OpenStreetMap");
   await expect(page.locator("#map-assets-error")).toBeHidden();
@@ -82,7 +82,7 @@ for (const asset of ["leaflet.js", "leaflet.css"]) {
     await expect(page.locator(".leaflet-container")).toHaveCount(0);
     await expect(page.locator("#location-input")).toBeDisabled();
     await page.getByRole("button", { name: "Collection", exact: true }).click();
-    await expect(page.locator(".pass-card")).toHaveCount(437);
+    await expect(page.locator(".pass-card")).toHaveCount(439);
     await page.getByLabel("Filter passes by name").fill("Galibier");
     await page.locator(".pass-card").click();
     await expect(page.locator("#detail-title")).toHaveText("Col du Galibier");

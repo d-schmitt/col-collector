@@ -2,7 +2,7 @@
   "version": 1,
   "source": "https://www.google.com/maps/d/viewer?mid=1GPHWvjnIKIObSl2m5ykGzmm-BJd5aXWU",
   "sourceName": "Alps +1000m climbs +more / cycloclimbing.com",
-  "importedAt": "2026-10-29T21:05:26.597525+00:00",
+  "importedAt": "2026-11-20T22:51:48.473517+00:00",
   "counts": {
     "Paved passes +2000": 86,
     "Paved passes -2000": 351
@@ -1309,6 +1309,18 @@
       "centCols": "IT-AO-1930"
     },
     {
+      "id": "climb-torri-di-fraele",
+      "name": "Torri di Fraele",
+      "latitude": 46.5018436,
+      "longitude": 10.309948,
+      "elevation": 1930,
+      "group": "low",
+      "sourceLayer": "reviewed addition",
+      "sourceUrl": "https://www.in-lombardia.it/en/tourism-in-lombardy/tourism-sondrio/torri-di-fraele",
+      "sourceClimbMetres": null,
+      "centCols": null
+    },
+    {
       "id": "pass-fbf0aa31b12212a8",
       "name": "Col du Glandon",
       "latitude": 45.239538,
@@ -1451,6 +1463,18 @@
       "sourceUrl": "http://cycloclimbing.com/alpspass1700paved/143jouxverte.html",
       "sourceClimbMetres": 1333.0,
       "centCols": "FR-74-1765"
+    },
+    {
+      "id": "climb-alpe-dhuez",
+      "name": "Alpe d’Huez",
+      "latitude": 45.0923082,
+      "longitude": 6.0722839,
+      "elevation": 1860,
+      "group": "low",
+      "sourceLayer": "reviewed addition",
+      "sourceUrl": "https://www.alpedhuez.com/en/activities/summer-activities/bike/the-21-bends/",
+      "sourceClimbMetres": null,
+      "centCols": null
     },
     {
       "id": "pass-965d3e148f028ea0",
@@ -5257,5 +5281,6 @@
       "sourceClimbMetres": 1020.0,
       "centCols": "FR-06-0981"
     }
-  ]
+  ],
+  "reviewedAdditionCount": 2
 }

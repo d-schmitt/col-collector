@@ -27,17 +27,17 @@ test("completed map markers use the contrasting legend color and a stronger outl
   await expect(collected).toHaveAttribute("stroke", "#fff");
   await expect(collected).toHaveAttribute("stroke-width", "2.5");
   await expect(page.locator(".legend-dot.done")).toHaveCSS("background-color", "rgb(181, 27, 120)");
-  await expect(page.locator('.leaflet-overlay-pane path[fill="#596960"]')).toHaveCount(436);
+  await expect(page.locator('.leaflet-overlay-pane path[fill="#596960"]')).toHaveCount(438);
 });
 
 test("filters, location search, map bounds and mobile layout", async ({ page }) => {
   const errors = [];
   page.on("pageerror", (e) => errors.push(e.message));
-  await expect(page.locator(".pass-card")).toHaveCount(437);
+  await expect(page.locator(".pass-card")).toHaveCount(439);
   await page.getByLabel("Summit group").selectOption("high");
   await expect(page.locator(".pass-card")).toHaveCount(86);
   await page.getByLabel("Summit group").selectOption("low");
-  await expect(page.locator(".pass-card")).toHaveCount(351);
+  await expect(page.locator(".pass-card")).toHaveCount(353);
   await page.getByRole("combobox", { name: "Progress", exact: true }).selectOption("done");
   await expect(page.getByRole("heading", { name: "No passes here yet" })).toBeVisible();
   await page.getByRole("button", { name: "Reset filters" }).click();
@@ -57,6 +57,28 @@ test("filters, location search, map bounds and mobile layout", async ({ page }) 
   await expect.poll(() => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
   await page.screenshot({ path: "test-results/collection-mobile.png", fullPage: false });
   expect(errors).toEqual([]);
+});
+
+test("reviewed summit finishes appear as map markers", async ({ page }) => {
+  await page.getByLabel("Filter passes by name").fill("Alpe d’Huez");
+  await page.getByRole("button", { name: "Map", exact: true }).click();
+  await page.getByRole("button", { name: "Show all matching passes" }).click();
+  let marker = page.locator(".leaflet-overlay-pane path");
+  await expect(marker).toHaveCount(1);
+  await marker.hover();
+  await expect(page.locator(".leaflet-tooltip").filter({ hasText: "Alpe d’Huez" })).toHaveCount(1);
+  await marker.click();
+  await expect(page.locator("#detail-title")).toHaveText("Alpe d’Huez");
+
+  await page.getByRole("button", { name: "Back to map", exact: false }).click();
+  await page.getByLabel("Filter passes by name").fill("Torri di Fraele");
+  await page.getByRole("button", { name: "Show all matching passes" }).click();
+  marker = page.locator(".leaflet-overlay-pane path");
+  await expect(marker).toHaveCount(1);
+  await marker.hover();
+  await expect(page.locator(".leaflet-tooltip").filter({ hasText: "Torri di Fraele" })).toHaveCount(1);
+  await marker.click();
+  await expect(page.locator("#detail-title")).toHaveText("Torri di Fraele");
 });
 
 test("log, edit, repeat, photo, backup, reload and last-ascent deletion", async ({ page }) => {
@@ -96,7 +118,7 @@ test("log, edit, repeat, photo, backup, reload and last-ascent deletion", async 
   const backupPath = await backup.path();
   expect(backup.suggestedFilename()).toMatch(/col-collector.*json/);
   await page.reload();
-  await expect(page.locator("#progress-label")).toHaveText("1 / 437 collected");
+  await expect(page.locator("#progress-label")).toHaveText("1 / 439 collected");
   await page.getByLabel("Filter passes by name").fill("Galibier");
   await page.locator(".pass-card").click();
   await expect(page.locator(".journal-entry")).toHaveCount(2);
@@ -183,7 +205,7 @@ test("Mortirolo can be collected with an unknown approach from the shared map de
   await page.getByRole("button", { name: "Download backup" }).click();
   const backupPath = await (await download).path();
   await page.reload();
-  await expect(page.locator("#progress-label")).toHaveText("1 / 437 collected");
+  await expect(page.locator("#progress-label")).toHaveText("1 / 439 collected");
   await page.getByLabel("Filter passes by name").fill("Mortirolo");
   await page.locator(".pass-card").click();
   await expect(page.locator(".journal-entry")).toHaveCount(2);
@@ -215,17 +237,17 @@ test("manual GitHub sync protects local changes and offers recovery", async ({ p
   await expect(page.locator("#sync-status")).toContainText("Local copy matches");
   runtime.store.saveAscent({ revision: runtime.store.revision(), approachId: "stelvio-prad", note: "Keep locally" });
   await page.reload();
-  await expect(page.locator("#progress-label")).toHaveText("1 / 437 collected");
+  await expect(page.locator("#progress-label")).toHaveText("1 / 439 collected");
   await page.getByText("Passport tools", { exact: true }).click();
   await page.getByRole("button", { name: "GitHub sync", exact: true }).click();
   await page.getByRole("button", { name: "Pull backup", exact: true }).click();
   await page.getByRole("dialog").getByRole("button", { name: "Pull backup", exact: true }).click();
   await expect(page.getByRole("alert")).toContainText("unpushed local changes");
-  await expect(page.locator("#progress-label")).toHaveText("1 / 437 collected");
+  await expect(page.locator("#progress-label")).toHaveText("1 / 439 collected");
   await page.getByText("Conflicts and recovery", { exact: true }).click();
   await page.getByRole("button", { name: "Replace local from GitHub", exact: true }).click();
   await page.getByRole("button", { name: "Replace local passport", exact: true }).click();
-  await expect(page.locator("#progress-label")).toHaveText("0 / 437 collected");
+  await expect(page.locator("#progress-label")).toHaveText("0 / 439 collected");
   await expect(page.getByRole("button", { name: "Download pre-pull recovery" })).toBeEnabled();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download pre-pull recovery" }).click();
